@@ -24,13 +24,12 @@ bbs_error(int code, char *why)
 
     syslog(LOG_ERR, "%m");
 
-    printf("HTTP/1.0 %03d %s\r\n", code, why);
-    puts("content-type: text/html\r\n"
-           "\r\n"
-         "<HTML>\n"
+    puts("<HTML>\n"
+	 "<META NAME=\"ROBOTS\" CONTENT=\"NOINDEX,NOFOLLOW\">"
 	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
 	 "<BODY BGCOLOR=black>\n"
-         "<CENTER><FONT COLOR=RED>OH, NO!<BR>");
+         "<CENTER><FONT COLOR=RED>OH, NO!<BR>\n");
+    printf("ERROR CODE %d<BR>\n", code);
     if (code == 503)
 	puts(strerror(err));
     else
@@ -248,14 +247,12 @@ main(int argc, char **argv, char **envp)
 
 	    switch ( comment(name,email,public,website,text,art) ) {
 	    case 1:
-		printf("HTTP/1.0 303 Ok\r\n"
-		       "Location: %s%s\n"
-		       "\n", bbsroot, url);
+		puts("<html>");
+		printf("<meta http-equiv=\"Refresh\" Content=0; URL=%s/%s/\">\n", bbsroot, url);
+		puts("</html>");
 		exit(0);
 	    case 2:
-		printf("HTTP/1.0 200 Ok\r\n"
-		       "\r\n"
-		       "<html>\n"
+		printf("<html>\n"
 		       "<head>\n"
 		       "<title>your comment is being held by "
 		              "the moderator</title>\n"
@@ -281,21 +278,15 @@ main(int argc, char **argv, char **envp)
 	/* complain about missing items */
     }
     else if (getenv("WWW_cancel")) {
-	printf("HTTP/1.0 303 Ok\n"
-	       "Location: %s\n"
-	       "\n", bbsroot);
+	puts("<html>");
+	printf("<meta http-equiv=\"Refresh\" Content=1; URL=%s/\">\n", bbsroot);
+	puts("</html>");
 	exit(0);
     }
 
 
     if ( (themfile = alloca(strlen(bbspath) + 20)) == 0 )
 	bbs_error(503, "Out of memory!");
-
-    printf("Content-Type: text/html; charset=iso-8859-1\r\n"
-	   "Connection: close\r\n"
-	   "Server: %s\r\n"
-	   "Cache-Control: no-cache\r\n"
-	   "\r\n", script);
 
     stash("_DOCUMENT", script);
 

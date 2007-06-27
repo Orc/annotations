@@ -23,13 +23,11 @@ bbs_error(int code, char *why)
     else
 	syslog(LOG_ERR, "%d: %s", code, why);
 
-    printf("HTTP/1.0 %03d %s\r\n", code, why);
-    puts("content-type: text/html\r\n"
-           "\r\n"
-         "<HTML>\n"
+    puts("<HTML>\n"
 	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
 	 "<BODY BGCOLOR=black>\n"
          "<CENTER><FONT COLOR=RED>OH, NO!<BR>");
+    printf("ERROR CODE %s<BR>\n", code);
     if (code/100 == 5)
 	puts(strerror(err));
     else
@@ -270,15 +268,13 @@ main(int argc, char **argv)
 	    syslog(LOG_INFO, "res (%s) is %d", editing?"edit":"post", res);
 
 	    if (res) {
-		printf("HTTP/1.0 303 Ok\r\n"
-		       "Content-Type: text/html\r\n"
-		       "Location: %s/post\n"
-		       "\n", bbsroot);
+		puts("<html>");
+		printf("<meta http-equiv=\"Refresh\" Content=1; URL=%s/post/\">\n", bbsroot);
 		printf("<html><head><title>article %s</title></head>",
 			editing ? "updated" : "posted");
 		printf("<body><p>The article has been %s.  If your web browser"
 				"does not take you to the correct page, "
-				"<a href=\"%s/post\">click here</a></p></body>"
+				"<a href=\"%s/post\">this is where you need to go</a></p></body>"
 				"</html>\n", editing ? "updated" : "posted",
 				bbsroot);
 		exit(0);
@@ -287,10 +283,9 @@ main(int argc, char **argv)
 	complain = (strcmp(p, "New Message") != 0);
     }
     else if (xgetenv("WWW_cancel")) {
-	printf("HTTP/1.0 303 Ok\n"
-	       "Location: %s/post\n"
-	       "\n", bbsroot);
-	printf("<html><head><title>%s cancelled</title></head>",
+	puts("<html>");
+	printf("<meta http-equiv=\"Refresh\" Content=1; URL=%s/post/\">\n", bbsroot);
+	printf("<head><title>%s cancelled</title></head>",
 		editing ? "edit" : "post");
 	printf("<body><p>%s cancelled.  If your web browser"
 			"does not take you to the correct page, "
@@ -305,12 +300,6 @@ main(int argc, char **argv)
     if ( (themfile = alloca(strlen(bbspath) + 20)) == 0 )
 	bbs_error(503, "Out of memory!");
 
-
-    printf("Content-Type: text/html; charset=iso-8859-1\r\n"
-	   "Connection: close\r\n"
-	   "Server: %s\r\n"
-	   "Cache-Control: no-cache\r\n"
-	   "\r\n", script);
 
     stash("_DOCUMENT", script);
     stash("_USER", author);
