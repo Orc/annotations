@@ -1,0 +1,14 @@
+<HTML>
+<HEAD><?theme title?></HEAD>
+<BODY>
+<DIV ALIGN=JUSTIFY>
+<TABLE ALIGN=CENTER>
+<TR><TD ALIGN=CENTER COLSPAN=2>
+<!-- put your title here -->
+</TD></TR>
+    <TD><?theme body?></TD>
+</TR>
+</TABLE>
+</DIV>
+</BODY>
+</HTML>

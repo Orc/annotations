@@ -1,0 +1,86 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <syslog.h>
+#include <dirent.h>
+#include <sys/file.h>
+#include <ctype.h>
+
+
+#include "indexer.h"
+#include "formatting.h"
+#include "mapfile.h"
+#include "syndicate.h"
+
+
+void
+addcomments(FILE *f, struct article *art)
+{
+    char *com;
+    long size;
+
+    if (com = mapfile(art->cmtfile, &size)) {
+	fprintf(f, "<!-- comments -->\n");
+	fwrite(com, size, 1, f);
+	munmap(com, size);
+    }
+    if (art->comments_ok) {
+	fprintf(f, "<FORM METHOD=GET ACTION=\"%scomment\">\n",
+		    fetch("_ROOT"));
+	fputs(fmt.comment.start, f);
+	fprintf(f, "<INPUT TYPE=SUBMIT NAME=comment VALUE=Comment>\n");
+	fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", art->url);
+	fputs(fmt.comment.end, f);
+	fprintf(f, "</FORM>\n");
+    }
+}
+
+
+int
+post(struct article *art, char *bbspath)
+{
+    struct tm *tm;
+    FILE *f;
+
+
+    if ( chdir(bbspath) != 0 || newart(art) == 0) return 0;
+
+    tm = localtime(&art->timeofday);
+    art->modified = art->timeofday;
+    art->url = makefile(art->ctlfile, "index.html");
+
+    writectl(art);
+    writemsg(art, FM_IMAGES);
+    writehtml(art);
+
+    generate(tm, bbspath, 0, PG_ALL);
+    syndicate(tm, bbspath, &rss2feed);
+    syndicate(tm, bbspath, &atomfeed);
+    return 1;
+}
+
+
+int
+edit(struct article *art, char *bbspath)
+{
+    struct tm *tm, *today;
+    int buildflags = PG_ARCHIVE;
+
+    if ( chdir(bbspath) != 0) return 0;
+
+    art->modified = time(0);
+    tm = localtime( &art->timeofday );
+    today = localtime( &art->modified );
+
+    if ( (tm->tm_year == today->tm_year) && (tm->tm_mon == today->tm_mon) )
+	buildflags |= PG_HOME|PG_POST;
+
+    writectl(art);
+    writemsg(art, FM_COOKED);
+    writehtml(art);
+
+    if (reindex(tm, bbspath, 0))
+	buildpages(tm, buildflags, 0);
+    return 1;
+}

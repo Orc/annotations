@@ -1,0 +1,42 @@
+CC=@CC@
+LIBS=@LIBS@
+
+THEME=theme.o
+
+POST_OBJS=format.o post.o bbs_post.o mapfile.o indexer.o rss.o readconfig.o $(THEME)
+REINDEX_OBJS=format.o mapfile.o readconfig.o indexer.o reindex.o rss.o $(THEME)
+COMMENT_OBJS=comment.o format.o mapfile.o readconfig.o indexer.o rss.o post.o $(THEME)
+PGMS=post reindex comment
+
+all: $(PGMS)
+
+post: $(POST_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(POST_OBJS) $(LIBS)
+
+reindex: $(REINDEX_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(REINDEX_OBJS) $(LIBS)
+
+comment: $(COMMENT_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(COMMENT_OBJS) $(LIBS)
+
+install: $(PGMS) @CGIDIR@
+	@INSTALL@ -m 4711 -o 0 -g 0 post @CGIDIR@/@EXEC_PREFIX@post
+	@INSTALL@ -m 4711 -o 0 -g 0 comment @CGIDIR@/@EXEC_PREFIX@comment
+	@INSTALL@ -m 4711 -o 0 -g 0 reindex @CGIDIR@/@EXEC_PREFIX@reindex
+
+clean:
+	rm -f *.o $(PGMS)
+
+distclean spotless: clean
+	rm -f readconfig.* @CONFIGURE_FILES@ @GENERATED_FILES@
+
+bbs_post.o: bbs_post.c config.h indexer.h formatting.h
+comment.o: comment.c config.h indexer.h formatting.h
+readconfig.o: readconfig.c config.h formatting.h mapfile.h
+format.o: format.c config.h formatting.h indexer.h
+indexer.o: indexer.c config.h formatting.h indexer.h mapfile.h
+rss.o: rss.c config.h formatting.h indexer.h mapfile.h
+mapfile.o: mapfile.c mapfile.h
+post.o: post.c indexer.h formatting.h mapfile.h
+reindex.o: reindex.c config.h formatting.h mapfile.h indexer.h
+theme.o: theme.c config.h

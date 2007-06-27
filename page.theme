@@ -1,0 +1,23 @@
+<HTML>
+<HEAD><?theme title?></HEAD>
+<BODY>
+<DIV ALIGN=JUSTIFY>
+<TABLE ALIGN=CENTER>
+<TR><TD ALIGN=CENTER COLSPAN=2>
+<A HREF="<?theme $weblog?>">
+<!-- put your title here -->
+</A>
+</TD></TR>
+    <TD VALIGN=TOP>
+    <?theme body?>
+    </TD>
+    <TD VALIGN=TOP>
+    <?theme [bookmarks.html]?>
+    <HR>
+    <?theme [archive.html]?>
+    </TD>
+</TR>
+</TABLE>
+</DIV>
+</BODY>
+</HTML>
