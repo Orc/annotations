@@ -73,7 +73,7 @@ esac'
 #
 TARGET=annotations
 
-test -r configure.inc || test -d SCCS && get configure.inc
+test -r configure.inc || ( test -d SCCS && get configure.inc )
 . ./configure.inc
 
 

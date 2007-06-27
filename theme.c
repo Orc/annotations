@@ -8,6 +8,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pwd.h>
@@ -203,8 +204,12 @@ putinclude(char *include, void (*putbody)(FILE*), FILE *f )
     if (len > 0 && include[len-1] == ']')
 	include[len-1] = 0;
 
+#if 0
     if ( !process(include, putbody, 0, f) )
 	fprintf(f, "<!-- cannot open [%s]: %s -->\n", include, strerror(errno));
+#else
+    process(include,putbody, 0, f);
+#endif
 }
 
 
@@ -278,6 +283,28 @@ process(char *template, void (*putbody)(FILE*), int justdump, FILE *output )
     FILE *input;
 
     themeinit();
+
+    if (template[0] == '$') {
+	char *bfr = alloca(strlen(template));
+	char *res, *var, *p, *hold;
+
+	strcpy(bfr, template+1);
+	for ( p = bfr; isalnum(*p) || (*p == '_') || (*p == '-'); )
+	    ++p;
+	if (*p) {
+	    var = alloca( 1 + (p-bfr) );
+	    strncpy(var, bfr, p-bfr);
+	    var[p-bfr] = 0;
+
+	    if ( (res = fetch(var)) == 0)
+		res = "";
+
+	    hold = alloca(strlen(res) + strlen(p) + 1);
+	    sprintf(hold, "%s%s", res, p);
+
+	    template = hold;
+	}
+    }
 
     if ( input = fopen(template, "r") ) {
 	while ( (c = fgetc(input)) != EOF ) {

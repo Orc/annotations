@@ -110,6 +110,21 @@ archivepage()
 }
 
 
+int
+do_one_page(char *page)
+{
+    struct art *art;
+
+    if (art = openart(page)) {
+	stash("LOCATION", page);
+	writectl(art);
+	writehtml(art);
+	return 0;
+    }
+    return 1;
+}
+
+
 void
 bbs_error(int code, char *why)
 {
@@ -173,9 +188,6 @@ main(int argc, char **argv)
     stash("weblog", bbsroot);
 
 
-    if (buildarchivepage)
-	archivepage();
-
     if (argc > 0) {
 	struct tm x;
 
@@ -183,10 +195,14 @@ main(int argc, char **argv)
 	levels = sscanf(argv[0], "%d/%d/%d", &x.tm_year, &x.tm_mon, &x.tm_mday);
 
 	if (levels < 1) {
-	    fprintf(stderr, "usage: %s year[/mon[/day]]\n", pgm);
-	    exit(1);
+	    int rc = do_one_page(argv[0]);
+
+	    if (rc != 0)
+		fprintf(stderr, "usage: %s year[/mon[/day]]\n", pgm);
+	    exit(rc);
 	}
 	x.tm_year -= 1900;
+	x.tm_mon --;
 
 	today = localtime(&now);
 
@@ -201,6 +217,10 @@ main(int argc, char **argv)
 	levels = 3;
 	tm = localtime(&now);
     }
+
+    if (buildarchivepage)
+	archivepage();
+
 
     if (levels == 1) {
 	int mon;

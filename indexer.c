@@ -178,16 +178,18 @@ putindex(FILE *f)
 char *
 makefile(char *pathname, char *filepart)
 {
-    char *ret = malloc(strlen(pathname)+20);
+    char *ret = malloc(strlen(pathname)+strlen(filepart) + 2);
     char *p;
 
     if (ret) {
 	strcpy(ret, pathname);
-	if (p = strrchr(ret, '/')) {
+	if (p = strrchr(ret, '/'))
 	    strcpy(p+1, filepart);
-	    return ret;
+	else {
+	    strcat(ret, "/");
+	    strcat(ret, filepart);
 	}
-	free(ret);
+	return ret;
     }
     return 0;
 }
@@ -652,13 +654,8 @@ puthtml(FILE *f)
     if (!fmt.topsig) byline(f,htmlart, 0);
 
 
-    if ( (htmlart->comments > 0) && !htmlart->comments_ok) {
-	fprintf(f, "<P class=CommentHeader><B>Comments are closed</B><hr></P>\n");
-	return 1;
-    }
-
     if (htmlart->comments > 0) {
-	fprintf(f, "<P class=CommentHeader><B>Comments</B><hr></P>\n");
+	fprintf(f, "<P class=CommentHeader>Comments<hr></P>\n");
 	if (text = mapfile(htmlart->cmtfile, &size)) {
 	    fwrite(text,size,1,f);
 	    munmap(text,size);
@@ -719,6 +716,9 @@ puthtml(FILE *f)
 	fputs(fmt.comment.end, f);
 	fprintf(f, "</FORM>\n");
     }
+    else if (htmlart->comments > 0)
+	fprintf(f, "<P class=CommentHeader>Comments are closed</P>\n");
+
     return 1;
 }
 
@@ -727,16 +727,26 @@ int
 writehtml(struct article *art)
 {
     FILE *f;
-    char *url, *root;
+    char *url, *root, *path;
+    char *p;
 
     if ( art && art->url && (f = rewrite(art->url)) ) {
 	flock(fileno(f), LOCK_EX);
 	htmlart = art;
 
 	root = fetch("_ROOT");
+
 	url = alloca(strlen(art->url)+strlen(root)+10);
 	sprintf(url, "%s%s", root, art->url);
 	stash("_DOCUMENT", url);
+
+	path = alloca(strlen(art->url)+1);
+	strcpy(path, art->url);
+	if ( (p = strrchr(path, '/')) == 0)
+	    path = ".";
+	else
+	    *p = 0;
+	stash("LOCATION", path);
 
 	stash("_USER", art->author);
 	stash("title", art->title);

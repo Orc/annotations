@@ -157,6 +157,7 @@ comment(char *from, char *email,
     struct tm tm, *today;
     int buildflags = PG_ARCHIVE;
     char *ip;
+    int yr,mn,dy,artno;
 
     if ( cmt = newcomment(art) )  {
 	cmt->author  = from;
@@ -185,9 +186,11 @@ comment(char *from, char *email,
     writectl(art);
     writehtml(art);
 
-    if ( (tm.tm_year == today->tm_year) && (tm.tm_mon == today->tm_mon) )
-	buildflags |= (PG_HOME|PG_POST);
-    generate(&tm, bbspath, 0, buildflags);
+    if (sscanf(art->url, "%d/%d/%d/%d", &yr, &mn, &dy, &artno) == 4) {
+	if ( (tm.tm_year == today->tm_year) && (tm.tm_mon == today->tm_mon) )
+	    buildflags |= (PG_HOME|PG_POST);
+	generate(&tm, bbspath, 0, buildflags);
+    }
 
     return cmt->publish ? 1 : 2;
 }
