@@ -300,10 +300,10 @@ main(int argc, char **argv)
 	       "Cache-Control: no-cache\r\n"
 	       "\r\n", script);
 	puts("<html>");
-	printf("<meta http-equiv=\"Refresh\" Content=1; URL=%s/post/\">\n", bbsroot);
+	printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s/post/\">\n", bbsroot);
 	printf("<head><title>%s cancelled</title></head>",
 		editing ? "edit" : "post");
-	printf("<body><p>%s cancelled.  If your web browser"
+	printf("<body><p>%s cancelled.  If your web browser\n"
 			"does not take you to the correct page, "
 			"<a href=\"%s/post\">click here</a></p></body>"
 			"</html>\n", editing ? "Edit" : "Post", bbsroot);

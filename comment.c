@@ -299,7 +299,7 @@ main(int argc, char **argv, char **envp)
 	       "Cache-Control: no-cache\r\n"
 	       "\r\n", script);
 	puts("<html>");
-	printf("<meta http-equiv=\"Refresh\" Content=1; URL=%s/\">\n", bbsroot);
+	printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s/\">\n", bbsroot);
 	puts("</html>");
 	exit(0);
     }
