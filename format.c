@@ -56,11 +56,13 @@ format(FILE *f, char *text, int flags)
 	newpara = 0;
 	if (*p == '*') {
 	    if ( (bold & 1) && !isspace(p[-1]) ) {
-		fputs("</B>", f);
+		if ( !(flags & FM_STRIP) )
+		    fputs("</B>", f);
 		bold &= ~1;
 	    }
 	    else if ( ((bold &1) == 0) && isalnum(p[1])) {
-		fputs("<B>", f);
+		if ( !(flags & FM_STRIP) )
+		    fputs("<B>", f);
 		bold |= 1;
 	    }
 	    else
@@ -68,12 +70,29 @@ format(FILE *f, char *text, int flags)
 	}
 	else if (*p == '_') {
 	    if ( (bold & 2) && !isspace(p[-1]) ) {
-		fputs("</I>", f);
+		if ( !(flags & FM_STRIP) )
+		    fputs("</I>", f);
 		bold &= ~2;
 	    }
 	    else if ( ((bold & 2) == 0) && isalnum(p[1])) {
-		fputs("<I>", f);
+		if ( !(flags & FM_STRIP) )
+		    fputs("<I>", f);
 		bold |= 2;
+	    }
+	    else
+		fputc(*p, f);
+	}
+	else if (*p == '\\' && 1[p])
+	    fputc(*++p, f);
+	else if (*p == '<' && !(isalpha(p[1]) || p[1] == '/') )
+	    fputs( (flags & FM_STRIP) ? "?" : "&lt;",f);
+	else if (*p == '&' && isspace(p[1]))
+	    fputs( (flags & FM_STRIP) ? "?" : "&amp;",f);
+	else if (flags & FM_STRIP) {
+	    if (*p == '&') {
+		while (*p && *p != ';')
+		    ++p;
+		fputc('?',f);
 	    }
 	    else
 		fputc(*p, f);
@@ -133,12 +152,6 @@ format(FILE *f, char *text, int flags)
 	    }
 	    fprintf(f, "%s>", align);
 	}
-	else if (*p == '<' && !(isalpha(p[1]) || p[1] == '/') )
-	    fputs("&lt;",f);
-	else if (*p == '&' && isspace(p[1]))
-	    fputs("&amp;",f);
-	else if (*p == '\\' && 1[p])
-	    fputc(*++p, f);
 	else
 	    fputc(*p, f);
     }

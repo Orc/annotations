@@ -16,6 +16,51 @@ extern int dirent_nsort(struct dirent **a, struct dirent **b);
 extern int dirent_is_good(struct dirent *e);
 
 
+/* pick a few sentences off the start of an article
+ */
+#define EX_HTML		0x01	/* allow html */
+#define EX_ENTITY	0x02	/* allow character entities */
+#define CLIPPING	200
+#define MORE		1000
+
+char *
+excerpt(char *text, int textsize, int flags)
+{
+    static char bfr[CLIPPING+MORE];
+    char *p, *e;
+    int print = 1;
+    int clip, size;
+
+    for (p=text, size=clip=0; (size < textsize) && (size < CLIPPING+MORE); ++p, ++size) {
+	if (*p == '<') print = 0;
+	if (print) {
+	    clip++;
+	    if (clip > CLIPPING && (*p == '.' || *p == '?' || *p == '!')) {
+		++p, ++size;
+		break;
+	    }
+	}
+	if (*p == '>') print = 1;
+    }
+
+    print = 1;
+    for (e=bfr, p=text; size > 0; ++p, --size) {
+	if ((*p == '<') && !(flags&EX_HTML) ) print = 0;
+	if (print) {
+	    if ( (*p == '&') && !(flags&EX_ENTITY) ) {
+		while (size && (*p != ';'))
+		    ++p, --size;
+	    }
+	    else 
+		*e++ = *p;
+	}
+	if ((*p == '>')) print = 1;
+    }
+    *e = 0;
+    return bfr;
+}
+
+
 
 /* Userlands RSS format */
 
@@ -71,32 +116,18 @@ rss2post(FILE *f, struct article *art)
 
     fprintf(f, "\n"
 	       "  <item>\n"
-	       "    <title>%s</title>\n"
+	       "    <title>");
+
+    format(f, art->title, FM_STRIP);
+    fprintf(f,"</title>\n"
 	       "    <link>%s/%s</link>\n"
 	       "    <guid permalink=\"true\">%s/%s</guid>\n"
-	       "    <pubDate>%s</pubDate>\n", art->title,
-					      fmt.url, art->url,
+	       "    <pubDate>%s</pubDate>\n", fmt.url, art->url,
 					      fmt.url, art->url,
 					      tod);
-    fprintf(f, "    <description>");
-
-    size = art->size;
-    for ( q=art->body; (size > 0) && isspace(*q); ++q, --size)
-	;
-
-    if (size > 200) size = 200;
-
-    while (size-- > 0) {
-	if (*q == '<') print = 0;
-	if (print)
-	    if (*q == ']')
-		fprintf(f, "&#%02x;", ']');
-	    else
-		fputc( (*q & 0x80) ? '?' : *q , f);
-	if (print == 0  && *q == '>') print = 1;
-    }
-    fprintf(f, "</description>\n"
-	       "  </item>\n");
+    fprintf(f, "    <description>%s</description>\n"
+	       "  </item>\n",
+		excerpt(art->body, art->size, 0) );
 }
 
 
@@ -147,34 +178,28 @@ atompost(FILE *f, struct article *art)
     fprintf(f, "\n"
 	       "  <entry>\n"
 	       "    <id>%s/%s</id>\n"
-	       "    <title type=\"text/plain\">%s</title>\n"
+	       "    <title type=\"text/html\">",
+		    fmt.url, art->url);
+    format(f, art->title, 0);
+    fprintf(f,"</title>\n"
 	       "    <link rel=\"alternate\" type=\"text/html\" href=\"%s/%s\" />\n",
-		    fmt.url, art->url,
-		    art->title,
 		    fmt.url, art->url);
     fprintf(f, "    <content type=\"text/html\" xml:base=\"%s\">\n", fmt.url);
-    fprintf(f, "<![CDATA[\n\n");
-    size = (art->size > 200) ? 200 : art->size;
-    for ( q=art->body; size-- > 0; ++q) {
-	if (*q == '<') print = 0;
-	if (print)
-	    if (*q == ']')
-		fprintf(f, "&#%02x;", ']');
-	    else
-		putc(*q, f);
-	if (print == 0  && *q == '>') print = 1;
-    }
-    fprintf(f, "\n\n]]>\n"
-	       "    </content>\n");
+    fprintf(f, "<![CDATA[\n\n"
+               "%s\n\n]]>\n"
+	       "    </content>\n",
+		       excerpt(art->body, art->size, EX_HTML|EX_ENTITY));
     fprintf(f, "    <issued>%s</issued>\n"
 	       "    <modified>%s</modified>\n"
 	       "    <author><name>%s</name></author>\n", tod, mod, art->author);
     fprintf(f, "    <dc:source>%s</dc:source>\n"
 	       "    <dc:creator>%s</dc:creator>\n"
-	       "    <dc:subject>%s</dc:subject>\n"
+	       "    <dc:subject>",
+		    fmt.name, art->author);
+    format(f, art->title, FM_STRIP);
+    fprintf(f, "</dc:subject>\n"
 	       "    <dc:format>text/html</dc:format>\n"
-	       "  </entry>\n",
-		    fmt.name, art->author, art->title);
+	       "  </entry>\n");
 }
 
 

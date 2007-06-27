@@ -13,6 +13,7 @@ struct fmt {
     char *url;			/* url for the weblog */
     char *author;		/* author for the weblog */
     char *about;		/* one line description of the weblog */
+    int nrposts;		/* # of articles on the homepage */
     int topsig;			/* signature at the start of a post? */
     struct markup article;	/* markup around an article in index.html */
     struct markup body;		/* markup around the body of an article */
@@ -35,5 +36,6 @@ void format(FILE*, char *, int);
 #define	FM_COOKED	0x02
 #define	FM_PREVIEW	0x04
 #define FM_BLOCKED	0x08	/* should the format be wrapped in <p>? */
+#define FM_STRIP	0x10
 
 #endif/*__FORMATTING_D*/

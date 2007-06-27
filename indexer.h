@@ -19,7 +19,7 @@ struct article {
     int    comments_ok;	/* ok to post comments? */
 };
 
-int buildpages(struct tm *, int, int);
+int buildpages(struct tm *, int);
 #define PG_HOME		0x01
 #define PG_ARCHIVE	0x02
 #define PG_POST		0x04
@@ -27,7 +27,7 @@ int buildpages(struct tm *, int, int);
 #define PG_SYNDICATE	0x10
 #define PG_ALL		(PG_HOME|PG_ARCHIVE|PG_POST|PG_ARTICLE|PG_SYNDICATE)
 
-int reindex(struct tm *, char *, int);
+int reindex(struct tm *, char *, int, int);
 void putindex(FILE*);
 
 char* makefile(char*, char*);

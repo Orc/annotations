@@ -72,6 +72,7 @@ archivepage()
     struct tm tm;
     char ftime[80];
     FILE *f;
+    int verbose = fetch("_VERBOSE") != 0;
 
     if ( (f = fopen("archive.html", "w")) == 0) {
 	perror("archive.html");
@@ -85,7 +86,8 @@ archivepage()
 	yrdir = year[years]->d_name;
 	months = scandir(year[years]->d_name, &month, mselect, nsort);
 
-	fprintf(stderr, "months for %s = %d\n", years[year]->d_name, months);
+	if (verbose)
+	    fprintf(stderr, "months for %s = %d\n",years[year]->d_name, months);
 
 	for (count=0; months-- > 0; ++count) {
 	    tm.tm_year = atoi(year[years]->d_name)-1900;
@@ -262,8 +264,11 @@ main(int argc, char **argv)
     else {
 	generate(tm, ".", full_rebuild, PG_ARCHIVE);
     }
+
+
     if (buildhomepage)
-	buildpages(today, PG_HOME|PG_POST, 0);
+	generate(tm, ".", 1, PG_HOME|PG_POST);
+
 
     if (buildsyndicate) {
 	syndicate(tm, bbsroot, &rss2feed);

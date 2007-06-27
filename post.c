@@ -80,7 +80,6 @@ edit(struct article *art, char *bbspath)
     writemsg(art, FM_COOKED);
     writehtml(art);
 
-    if (reindex(tm, bbspath, 0))
-	buildpages(tm, buildflags, 0);
+    generate(tm, bbspath, 0, buildflags);
     return 1;
 }

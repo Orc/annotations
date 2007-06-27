@@ -25,28 +25,32 @@ eoln(char *p, char *end)
 
 struct fmt fmt;
 
+enum kind { BOOL, NUMBER, SINGLE, DOUBLE };
+
 #define IT(s,n,p)	{ s, sizeof s, n, &(fmt.p) }
 static struct _keys {
     char *name;
     int   szname;
-    int   results;
+    enum kind results;
     void *ptr;
 } keys[] = {
-    IT("Name", 1, name),
-    IT("URL", 1, url),
-    IT("Author",1, author),
-    IT("About", 1, about),
-    IT("Chapter", 2, chapter),
-    IT("Article", 2, article),
-    IT("Title", 2, title),
-    IT("Byline", 2, byline),
-    IT("Body", 2, body),
-    IT("Post", 2, post),
-    IT("Edit", 2, edit),
-    IT("Comment", 2, comment),
-    IT("Archive", 2, archive),
-    IT("Separator", 1, separator),
-    IT("CommentSep", 1, commentsep),
+    IT("Name", SINGLE, name),
+    IT("URL", SINGLE, url),
+    IT("Author",SINGLE, author),
+    IT("About", SINGLE, about),
+    IT("nrposts", NUMBER, nrposts),
+    IT("topsig", BOOL, topsig),
+    IT("Chapter", DOUBLE, chapter),
+    IT("Article", DOUBLE, article),
+    IT("Title", DOUBLE, title),
+    IT("Byline", DOUBLE, byline),
+    IT("Body", DOUBLE, body),
+    IT("Post", DOUBLE, post),
+    IT("Edit", DOUBLE, edit),
+    IT("Comment", DOUBLE, comment),
+    IT("Archive", DOUBLE, archive),
+    IT("Separator", DOUBLE, separator),
+    IT("CommentSep", DOUBLE, commentsep),
 };
 #define NRKEY	(sizeof keys/sizeof keys[0])
 
@@ -82,6 +86,7 @@ readconfig(char *path)
     fmt.comment.end   = "</p>";
     fmt.commentsep    = "<hr>";
     fmt.separator     = "";
+    fmt.nrposts       = 10;
 
     if (cf == 0)
 	return;
@@ -101,29 +106,34 @@ readconfig(char *path)
 	    if (*q != '[')
 		continue;
 
-	    for (i=NRKEY; i-- > 0; )
-		if (strncasecmp(1+q, keys[i].name, keys[i].szname-1) == 0 && q[keys[i].szname] == ']') {
-		    if (keys[i].results > 0)
-			nextline = eoln(q=nextline, end);
+	    for (i=NRKEY; i-- > 0; ) {
+		if (strncasecmp(1+q, keys[i].name, keys[i].szname-1) != 0 || q[keys[i].szname] != ']')
+		    continue;
 
-		    switch (keys[i].results) {
-		    case 2:
-			m = keys[i].ptr;
-			m->start = restofline(q, nextline);
-			nextline = eoln(q=1+nextline, end); 
-			m->end = restofline(q, nextline);
-			++nextline;
-			goto more;
-		    case 1:
-			*((char**)keys[i].ptr) = restofline(q,nextline);
-			++nextline;
-			goto more;
-		    case 0:
-			*((int*)keys[i].ptr) = 1;
-			goto more;
-		    }
+		if (keys[i].results > 0)
+		    nextline = eoln(q=nextline, end);
+
+		switch (keys[i].results) {
+		case DOUBLE:
+		    m = keys[i].ptr;
+		    m->start = restofline(q, nextline);
+		    nextline = eoln(q=1+nextline, end); 
+		    m->end = restofline(q, nextline);
+		    ++nextline;
+		    break;
+		case SINGLE:
+		    *((char**)keys[i].ptr) = restofline(q,nextline);
+		    ++nextline;
+		    break;
+		case NUMBER:
+		    *((int*)keys[i].ptr) = atoi(q);
+		    break;
+		case BOOL:
+		    *((int*)keys[i].ptr) = 1;
+		    break;
 		}
-	    more: 1;
+		break;
+	    }
 	}
 	munmap(text, size);
     }

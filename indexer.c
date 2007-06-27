@@ -56,7 +56,7 @@ restofline(char *p, char *q)
     return a;
 }
 
-static FILE *iFb;
+static FILE *iFb = 0;
 
 void
 putindex(FILE *f)
@@ -96,7 +96,7 @@ putindex(FILE *f)
 
     rewind(iFb);
 
-    if (text || (text = mapfd(fileno(iFb), &size))) {
+    if (text = mapfd(fileno(iFb), &size)) {
 	/* context format is:  rep [ text^@{settings}^@ ]
 	 * where settings are ^Aurl
 	 *                    ^Bwebroot
@@ -151,6 +151,7 @@ putindex(FILE *f)
 	    }
 	}
 	fwrite(p, end-p, 1, f);
+	munmap(text,size);
     }
     else {
 	fprintf(f, "<!-- mapfd failed: %s -->\n", strerror(errno));
@@ -429,7 +430,7 @@ writehtml(struct article *art)
 
 
 int
-reindex(struct tm *tm, char *bbspath, int full_rebuild)
+reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 {
     char b1[20], b2[20];
 
@@ -437,29 +438,36 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild)
     struct dirent **days, **each;
     int dmax, emax;
     struct dirent **dp, **ap;
+    struct tm m;
     char **files;
     int nrfiles, count;
     char scratch[20];
     int even = 0;
+    int more = (nrposts > 0) ? 2 : 1;
+    int total = 0;
     int i;
+    int c;
     int j, k;
     int verbose = fetch("_VERBOSE") != 0;
     char *webroot = fetch("_ROOT");
 
-    strftime(mo, sizeof mo, "%Y/%m", tm);
+    m = *tm;
 
+    strftime(mo, sizeof mo, "%Y/%m", &m);
 
     files = malloc(sizeof *files * (nrfiles = 1000));
     count=0;
 
-    if ( (dmax=scandir(mo, &days, dirent_is_good, dirent_nsort)) > 0) {
+    while ( more-- ) {
+	dmax = scandir(mo, &days, dirent_is_good, dirent_nsort);
+
 	for (j=dmax; j-- > 0; ) {
 
 	    sprintf(dydir, "%s/%s", mo, days[j]->d_name);
 	    if ( (emax=scandir(dydir, &each, dirent_is_good, dirent_nsort)) < 1)
 		continue;
 
-	    strftime(b1, sizeof b1, "@ %b %%s, %Y", tm);
+	    strftime(b1, sizeof b1, "@ %b %%s, %Y", &m);
 	    sprintf(b2, b1, days[j]->d_name);
 	    files[count++] = strdup(b2);
 
@@ -467,6 +475,7 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild)
 		printf("T %s\n", b2);
 
 	    for (k = emax; k-- > 0; ) {
+		total ++;
 		sprintf(art, "%s/%s/message.ctl", dydir, each[k]->d_name);
 		if (count >= nrfiles-5)
 		    files = realloc(files, sizeof *files * (nrfiles += 1000));
@@ -477,8 +486,16 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild)
 	    }
 	    /*free(*dp);*/
 	}
+
+	m.tm_mon--;
+	if (m.tm_mon < 1) {
+	    m.tm_mon = 12;
+	    m.tm_year--;
+	}
+	strftime(mo, sizeof mo, "%Y/%m", &m);
     }
 
+    if (iFb) fclose(iFb);
     iFb = tmpfile();
 
     for (j = i = 0; i < count; i++) {
@@ -536,13 +553,20 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild)
 
 		even = !even;
 		freeart(art);
+
+		if ( nrposts && !--nrposts )
+		    break;
 	    }
 	    else
 		perror(files[i]);
 	}
 	free(files[i]);
     }
-    fflush(iFb);
+done:
+    while (i < count)
+	free(files[i++]);
+    /*fflush(iFb);*/
+    rewind(iFb);
     free(files);
 
     return 1;
@@ -550,7 +574,7 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild)
 
 
 int
-buildpages(struct tm *tm, int which, int count)
+buildpages(struct tm *tm, int which)
 {
     char post[80];
     char archive_for[80];
@@ -612,6 +636,15 @@ buildpages(struct tm *tm, int which, int count)
 void
 generate(struct tm *tm, char *bbspath, int indexflags, int buildflags)
 {
-    if (reindex(tm, bbspath, indexflags))
-	buildpages(tm, buildflags, 0);
+    int nrposts = 0;
+    unsigned int flag;
+
+
+    for (flag = 0x01; flag; flag <<= 1)
+	if (buildflags & flag) {
+	    nrposts = (flag==PG_HOME) ? fmt.nrposts : 0;
+
+	    if (reindex(tm, bbspath, indexflags, nrposts))
+		buildpages(tm, flag);
+	}
 }
