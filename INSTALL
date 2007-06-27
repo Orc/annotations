@@ -1,0 +1,47 @@
+
+		    HOW TO BUILD AND INSTALL ANNOTATIONS
+
+1) Unpacking the distribution
+
+The Annotations sources are distributed in tarballs.  After extracting from
+the tarball, you should end up with all the source and build files in the
+directory
+		annotations-(version)
+
+2) Installing the distribution
+
+Annotations uses configure.sh to set itself up for compilation.   To run
+configure, just do ``./configure.sh'' and it will check your system for
+build dependencies and build makefiles for you.   If configure.sh finishes
+without complaint, you can then do a ``make'' to compile everything and a
+``make install'' to install the binaries.
+
+Configure.sh has a few options that can be set:
+
+    --src=DIR		where the source lives (.)
+    --prefix=DIR	where to install the final product (/usr/local)
+    --execdir=DIR	where to put executables (prefix/bin)
+    --libdir=DIR	where to put libraries (prefix/lib)
+    --mandir=DIR	where to put manpages (prefix/man)
+    --confdir=DIR	where to put configuration information (/etc)
+    --wwwdir=DIR	system htdocs directory (@prefix@/htdocs)
+    --cgidir=DIR	system cgi script directory (@WWWDIR@/cgi-bin)
+    --userdir=DIR	where user htdocs live (~user/htdocs)
+    --webuser		the user that the web server runs as (nobody)
+
+3) Cautions and features
+
+    a)  It is important to set --webuser to the user that the http
+	server runs at, because all of the bits of annotations need to
+	do special initialization when they're run from a web server (in
+	thttpd, you need to match the DEFAULT_USER setting in config.h;
+	in apache, you need to match the user given by the User
+	directive in httpd.conf.)
+    b)  Annotations assumes that your webserver will treat
+	@USERDIR@/post/post.cgi, @USERDIR@/post/xmlpost.cgi, and
+	@USERDIR@/comment/index.cgi as cgi scripts.  These scripts are
+	(if created by the setup.weblog script) little shellscripts that
+	link to the post, xmlpost, and comment programs in @CGIDIR@.
+	The reason they are little shellscripts instead of symlinks is
+	that some webservers (like thttpd) don't pay attention to
+	authorization files in the directory where the link came from.

@@ -1,0 +1,41 @@
+.\" Copyright (c) 1988, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.Dd Dec 26, 2005
+.Dt @EXEC_PREFIX@reindex 8
+.Os MASTODON
+.Sh NAME
+.Nm @EXEC_PREFIX@reindex
+.Nd Regenerate index pages for an Annotation weblog
+.Sh SYNOPSIS
+.Nm @EXEC_PREFIX@reindex
+.Op Ar flags
+.Op Ar year
+.Sh DESCRIPTION
+.Nm @EXEC_PREFIX@reindex
+regenerates the index pages for an Annotations weblog.
+With no flags,
+.Nm @EXEC_PREFIX@reindex
+regenerates the HomePage of the weblog.
+Flags are:
+.Bl -tag -width Fl
+.It Fl f
+Regenerate all the archive pages
+.It Fl a
+Regenerate all the archive pages, but in a slightly different way.
+.It Fl v
+Be chattery about it.
+.El
+.El
+.Sh SEE ALSO
+.Xr weblog.conf 5 ,
+.Xr annotations 7 ,
+.Xr setup.weblog 8

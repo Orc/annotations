@@ -1,0 +1,89 @@
+#! /bin/sh
+# setup.weblog:  create weblog directories for the current user (or, if you're
+#                root, a specific user) and initializes the weblog index pages.
+#
+
+
+ID=`id -u`
+
+if [ "$ID" -eq 0 ]; then
+    if [ "$#" -lt 1 ]; then
+	echo "usage: $0 username" 1>&2
+	exit 1
+    fi
+
+    if id -u $1 2>/dev/null 1>/dev/null ; then
+	USER=$1
+    else
+	echo "$0: No user $1" 1>&2
+	exit 1
+    fi
+else
+    USER=`id -un`
+
+    if [ -z "$USER" ]; then
+	echo "$0: Confusion all around: 'id -un' doesn't seem to work?" 1>&2
+	echo "$0: Please contact the system administrator!" 1>&2
+	exit 1
+    fi
+fi
+
+
+set -e
+
+cd `finger $USER | grep Directory: | awk '{print $2}'`
+test -d @USERDIR@ || mkdir @USERDIR@ && chown $USER @USERDIR@
+test -d @USERDIR@/post || mkdir @USERDIR@/post && chown $USER @USERDIR@/post
+test -d @USERDIR@/comment || mkdir @USERDIR@/comment && chown $USER @USERDIR@/comment
+
+if [ ! -r @USERDIR@/post/.htpasswd ]; then
+    htpasswd -c @USERDIR@/post/.htpasswd $USER
+fi
+
+if [ ! -x @USERDIR@/post/post.cgi ]; then
+    (   echo "#! /bin/sh"
+        echo "exec @CGIDIR@/@EXEC_PREFIX@post@EXEC_SUFFIX@"
+    ) > @USERDIR@/post/post.cgi
+    chmod +x @USERDIR@/post/post.cgi
+    chown $USER @USERDIR@/post/post.cgi
+fi
+
+if [ ! -x @USERDIR@/post/reindex.cgi ]; then
+    (   echo "#! /bin/sh"
+	echo "Status: 303"
+	echo "Content-Type: text/plain; charset=iso-8859-1"
+	echo "Connection: close"
+	echo "Cache-Control: no-cache"
+	echo "Location: /~$USER/post/"
+	echo
+
+        echo "exec @CGIDIR@/@EXEC_PREFIX@reindex@EXEC_SUFFIX@"
+    ) > @USERDIR@/post/reindex.cgi
+    chmod +x @USERDIR@/post/reindex.cgi
+    chown $USER @USERDIR@/post/reindex.cgi
+fi
+
+if [ \( -n "@XMLPOST@" \) -a \( ! -x @USERDIR@/post/xmlpost.cgi \) ]; then
+    (   echo "#! /bin/sh"
+	echo "exec @CGIDIR@/@EXEC_PREFIX@xmlpost@EXEC_SUFFIX@"
+    ) > @USERDIR@/post/xmlpost.cgi
+    chmod +x @USERDIR@/post/xmlpost.cgi
+    chown $USER @USERDIR@/post/xmlpost.cgi
+fi
+
+if [ ! -x @USERDIR@/comment/index.cgi ]; then
+    (   echo "#! /bin/sh"
+	echo "exec @CGIDIR@/@EXEC_PREFIX@comment@EXEC_SUFFIX@"
+    ) > @USERDIR@/comment/index.cgi
+    chmod +x @USERDIR@/comment/index.cgi
+    chown $USER @USERDIR@/comment/index.cgi
+fi
+
+if [ ! -r @USERDIR@/weblog.conf ]; then
+    cat > @USERDIR@/weblog.conf << EOF
+name=`finger $USER |grep Name: | sed -e 's/^.*Name: *//'`'s weblog
+url=http://`hostname -fqdn`/~$USER
+EOF
+fi
+
+exec @exedir@/@EXEC_PREFIX@reindex -fa $USER

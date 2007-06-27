@@ -186,11 +186,19 @@ byline(FILE *f, struct article *art, int with_url)
 }
 
 void
-subject(FILE *f, char *title)
+subject(FILE *f, struct article *art, int oktolink)
 {
-    if (title) {
+    char *p;
+
+    if (art->title) {
 	fputs(fmt.title.start, f);
-	format(f, title, 0);
+	if (oktolink && fmt.linktitle && (p = fetch("_ROOT")) ) {
+	    fprintf(f,"<A HREF=\"%s%s\">\n", p, art->url);
+	}
+	format(f, art->title, 0);
+	if (oktolink && fmt.linktitle && p) {
+	    fprintf(f, "</A>\n");
+	}
 	fputs(fmt.title.end, f);
     }
 }
@@ -207,7 +215,7 @@ void
 article(FILE *f, struct article *art, int flags)
 {
     if (art->body) {
-	subject(f,art->title);
+	subject(f, art, 0);
 	if (fmt.topsig)
 	    byline(f, art, !(flags & FM_PREVIEW) );
 	body(f, art->body, flags);

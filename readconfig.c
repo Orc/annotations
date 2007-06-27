@@ -27,7 +27,7 @@ struct fmt fmt;
 
 enum kind { BOOL, NUMBER, SINGLE, DOUBLE };
 
-#define IT(s,n,p)	{ s, sizeof s, n, &(fmt.p) }
+#define IT(s,n,p)	{ s, (sizeof s)-1, n, &(fmt.p) }
 static struct _keys {
     char *name;
     int   szname;
@@ -49,6 +49,8 @@ static struct _keys {
     IT("Body", DOUBLE, body),
     IT("Post", DOUBLE, post),
     IT("Edit", DOUBLE, edit),
+    IT("LinkTitle", BOOL, linktitle),
+    IT("SimpleArchive", BOOL, simplearchive),
     IT("Comment", DOUBLE, comment),
     IT("Archive", DOUBLE, archive),
     IT("Separator", DOUBLE, separator),
@@ -66,6 +68,7 @@ readconfig(char *path)
     char *q, *end;
     char *r;
     struct markup *m;
+    struct _keys *p;
 
     memset(&fmt, 0, sizeof fmt);
     fmt.name          = "";
@@ -95,7 +98,7 @@ readconfig(char *path)
     if (cf == 0)
 	return;
 
-    sprintf(cf, "%s/config", path);
+    sprintf(cf, "%s/weblog.conf", path);
 
     if (text = mapfile(cf, &size)) {
 	char *nextline;
@@ -104,36 +107,41 @@ readconfig(char *path)
 	q = text;
 	end = q + size;
 
-	for ( ;q < end; q = nextline) {
-	    nextline = 1+eoln(q, end);
+	for ( ;q < end; q = nextline+1) {
+	    nextline = eoln(q, end);
 
-	    if (*q != '[')
-		continue;
+	    for (p = &keys[0], i=NRKEY; i-- > 0; p++) {
 
-	    for (i=NRKEY; i-- > 0; ) {
-		if (strncasecmp(1+q, keys[i].name, keys[i].szname-1) != 0 || q[keys[i].szname] != ']')
+		if (strncasecmp(q, p->name, p->szname) != 0
+				    || isalnum(q[p->szname]))
 		    continue;
 
-		if (keys[i].results > 0)
-		    nextline = eoln(q=nextline, end);
+		q += p->szname;
 
-		switch (keys[i].results) {
+		switch (p->results) {
 		case DOUBLE:
-		    m = keys[i].ptr;
-		    m->start = restofline(q, nextline);
-		    nextline = eoln(q=1+nextline, end); 
-		    m->end = restofline(q, nextline);
-		    ++nextline;
+		    m = p->ptr;
+		    if (strncasecmp(q, ".start=", 7) == 0) {
+			m->start = restofline(q+7, nextline);
+			/*printf("%s.start=%s\n", p->name, m->start);*/
+		    }
+		    else if (strncasecmp(q, ".end=", 5) == 0) {
+			m->end = restofline(q+5, nextline);
+			/*printf("%s.end=%s\n", p->name, m->end);*/
+		    }
 		    break;
 		case SINGLE:
-		    *((char**)keys[i].ptr) = restofline(q,nextline);
-		    ++nextline;
+		    if ( *q == '=' ) {
+			*((char**)p->ptr) = restofline(q+1,nextline);
+			/*printf("%s=%s\n", p->name, *(char**)p->ptr);*/
+		    }
 		    break;
 		case NUMBER:
-		    *((int*)keys[i].ptr) = atoi(q);
-		    break;
 		case BOOL:
-		    *((int*)keys[i].ptr) = 1;
+		    if ( *q == '=' ) {
+			*((int*)p->ptr) = atoi(q+1);
+			/*printf("%s=%d\n", p->name, *(int*)p->ptr);*/
+		    }
 		    break;
 		}
 		break;

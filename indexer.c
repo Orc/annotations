@@ -457,7 +457,7 @@ puthtml(FILE *f)
     long  size;
 
     navbar(f, htmlart->url);
-    subject(f, htmlart->title);
+    subject(f, htmlart, 0);
     if (fmt.topsig) byline(f, htmlart, 0);
 
     if (text = mapfile(htmlart->msgfile, &size)) {
@@ -468,6 +468,12 @@ puthtml(FILE *f)
     else
 	fprintf(f, "<P class=Error>Ooops! mmap %s</P>\n",strerror(errno));
     if (!fmt.topsig) byline(f,htmlart, 0);
+
+
+    if ( (htmlart->comments > 0) && !htmlart->comments_ok) {
+	fprintf(f, "<P class=CommentHeader><B>Comments are closed</B><hr></P>\n");
+	return 1;
+    }
 
     if (text = mapfile(htmlart->cmtfile, &size)) {
 	fprintf(f, "<P class=CommentHeader><B>Comments</B><hr></P>\n");
@@ -609,7 +615,7 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 
 		fprintf(iFb, fmt.article.start, even ? "even" : "odd");
 
-		subject(iFb, art->title);
+		subject(iFb, art, 1);
 		if (fmt.topsig)
 		    byline(iFb, art, 1);
 		fwrite(art->body, art->size, 1, iFb);

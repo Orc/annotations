@@ -22,7 +22,7 @@
 char *pgm;
 
 
-static char *bbspath, *bbsroot, *bbsdir;
+char *bbspath, *bbsroot, *bbsdir;
 static char *yrdir = 0;
 
 
@@ -92,7 +92,7 @@ archivepage()
 	for (count=0; months-- > 0; ++count) {
 	    tm.tm_year = atoi(year[years]->d_name)-1900;
 	    tm.tm_mon  = atoi(month[months]->d_name)-1;
-	    if (count ==0) {
+	    if (! (count || fmt.simplearchive) ) {
 		if ( total++ == 0 )
 		    fprintf(f, "%s\n", fmt.archive.start);
 
@@ -103,18 +103,24 @@ archivepage()
 	    fprintf(f, "  <li><A HREF=\"%s%04d/%02d/index.html\">%s</A>\n",
 		    bbsroot, tm.tm_year+1900, tm.tm_mon+1, ftime);
 	}
-	if (count > 0)
+	if (count > 0 && !fmt.simplearchive)
 	    fprintf(f, "</ul>\n");
     }
     rclose(f);
 }
 
 
+void
+bbs_error(int code, char *why)
+{
+    fprintf(stderr, "%s: %s (code %d)\n", pgm, why, code);
+    exit(1);
+}
+
+
 
 main(int argc, char **argv)
 {
-    char *username = 0;
-    struct passwd *user;
     int levels;
     time_t now = time(0);
     struct tm *tm, *today, pagetime;
@@ -123,6 +129,7 @@ main(int argc, char **argv)
     int buildsyndicate = 0;
     int full_rebuild = 0;
     register opt;
+    struct passwd *pw;
 
     pgm = basename(argv[0]);
 
@@ -144,83 +151,23 @@ main(int argc, char **argv)
     argc -= optind;
     argv += optind;
 
-
-
-    if (argc < 1 || strlen(*argv) < 1) {
-	fprintf(stderr, "usage: %s {document-root}\n", pgm);
-	exit(1);
-    }
-
-    if ( (bbsdir = strdup(*argv)) == 0 || (bbsroot = malloc(strlen(*argv)+2)) == 0) {
-	perror(pgm);
-	exit(1);
-    }
-    strcpy(bbsroot, *argv);
-    if (bbsroot[strlen(bbsroot)-1] != '/')
-	strcat(bbsroot, "/");
-
-    if ( (bbsdir[0] == '/') && (bbsdir[1] == '~') ) {
-	char *r = strchr(bbsdir+2, '/');
-
-	username = bbsdir+2;
-
-	if (r) {
-	    *r++ = 0;
-	    bbsdir = r;
+    if ( (getuid() == 0) && (argc > 0) ) {
+	/* if a username is passed in, run reindex as that user
+	 * (offer only valid for root)
+	 */
+	if ( pw = getpwnam(argv[0]) ) {
+	    setgid(pw->pw_gid);
+	    setegid(pw->pw_gid);
+	    setuid(pw->pw_uid);
+	    seteuid(pw->pw_uid);
 	}
 	else
-	    bbsdir = "";
+	    bbs_error(503, "cannot find user in auth table");
     }
-
-    if (username) {
-	if ( (user = getpwnam(username)) == 0) {
-	    fprintf(stderr, "%s: user %s does not exist\n", pgm, username);
-	    exit(1);
-	}
-    }
-    else if (getuid() == 0) {
-	fprintf(stderr, "%s: I will not run with uid=0 inless you supply a user webpage\n", pgm);
-	exit(1);
-    }
-    else if ( (user = getpwuid(getuid())) == 0) {
-	fprintf(stderr, "%s: No user record for user id %d\n", pgm, getuid());
-	exit(1);
-    }
-    if ( username) {
-	bbspath = malloc(strlen(user->pw_dir) +
-			 strlen(PATH_USERDIR) +
-			 strlen(bbsdir) + 4);
-
-	if (bbspath == 0) {
-	    perror(pgm);
-	    exit(1);
-	}
-
-	if (setgid(user->pw_gid) || setuid(user->pw_uid)) {
-	    perror("reindex: set permissions");
-	    exit(1);
-	}
-
-	sprintf(bbspath, "%s/%s/%s", user->pw_dir, PATH_USERDIR, bbsdir);
-    }
-    else {
-	bbspath = malloc(strlen(PATH_WWWDIR) + strlen(bbsdir) + 3);
-	if (bbspath == 0) {
-	    perror(pgm);
-	    exit(1);
-	}
-
-	sprintf(bbspath, "%s/%s", PATH_WWWDIR, bbsdir);
-    }
-    if (chdir(bbspath) != 0) {
-	perror(bbspath);
-	exit(1);
-    }
-    readconfig(".");
+    
+    initialize();
 
     stash("weblog", bbsroot);
-    stash("_USER", user->pw_name);
-    stash("_ROOT", bbsroot);
 
 
     if (buildarchivepage)

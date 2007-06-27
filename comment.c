@@ -14,7 +14,7 @@
 #include "formatting.h"
 
 void
-html_error(int code, char *why)
+bbs_error(int code, char *why)
 {
     int err = errno;
 
@@ -47,7 +47,6 @@ int preview     = 0;
 int help        = 0;
 char *text      = 0;
 char *script    = 0;
-char *siteowner = 0;
 char *name      = 0;
 char *email     = 0;
 char *website   = 0;
@@ -196,13 +195,17 @@ comment(char *from, char *email, char *website, char *text, char *article)
     tm = localtime( &(art->timeofday) );
     today = localtime( &now );
 
-    if ( (tm->tm_year == today->tm_year) && (tm->tm_mon == today->tm_mon) )
-	buildflags |= (PG_HOME|PG_POST);
 
     writectl(art);
     writehtml(art);
 
+    syslog(LOG_INFO, "COMMENT TO %s", art->url);
+
     generate(tm,bbspath,0,buildflags);
+    if ( (tm->tm_year == today->tm_year) && (tm->tm_mon == today->tm_mon) ) {
+	/*buildflags |= (PG_HOME|PG_POST);*/
+	generate(tm, ".", 0, PG_ALL);
+    }
 
     flock(fileno(out), LOCK_UN);
     fclose(out);
@@ -239,87 +242,10 @@ main(int argc, char **argv, char **envp)
     openlog("comment", LOG_PID, LOG_NEWS);
 
     fillin = 0;
-    opterr = 0;
-    while ( (c = getopt(argc, argv, "d:eu:A:S:")) != EOF) {
-	switch (c) {
-	case 'S':
-	    script = optarg;
-	    break;
-	case 'A':
-	    siteowner = optarg;
-	    break;
-	case 'd':
-	    bbsdir = optarg;
-	    break;
-	case 'u':
-	    siteowner = optarg;
-	    break; 
-	case 'e':
-	    printenv=1;
-	    break;
-	}
-    }
+    initialize();
 
-    bbsroot = malloc(strlen(bbsdir)+2);
-    strcpy(bbsroot, bbsdir);
-    if (bbsroot[0] && bbsroot[strlen(bbsroot)-1] != '/')
-	strcat(bbsroot, "/");
-
-    stash("weblog",bbsroot);
-    stash("_ROOT", bbsroot);
-
-    if ( (bbsdir[0] == '/') && (bbsdir[1] == '~') ) {
-	char *r = strchr(bbsdir+2, '/');
-
-	siteowner = bbsdir+2;
-
-	if (r) {
-	    *r++ = 0;
-	    bbsdir = r;
-	}
-	else
-	    bbsdir = "";
-    }
-
-    if ( siteowner) {
-	if ( (user = getpwnam(siteowner)) == 0 )
-	    html_error(500, "User does not exist");
-
-	if (user->pw_uid == 0 || user->pw_gid == 0)
-	    html_error(500, "User cannot be root");
-
-	bbspath = malloc(strlen(user->pw_dir) +
-			 strlen(PATH_USERDIR) +
-			 strlen(bbsdir) + 4);
-
-	if (bbspath == 0)
-	    html_error(503, "Out of memory!");
-
-	if (setgid(user->pw_gid) || setuid(user->pw_uid))
-	    html_error(503, "Privilege confusion");
-
-	sprintf(bbspath, "%s/%s/%s", user->pw_dir, PATH_USERDIR, bbsdir);
-    }
-    else {
-	bbspath = malloc(strlen(PATH_WWWDIR) + strlen(bbsdir) + 3);
-	if (bbspath == 0)
-	    html_error(503, "Out of memory!");
-
-	sprintf(bbspath, "%s/%s", PATH_WWWDIR, bbsdir);
-    }
-
-    if (chdir(bbspath) != 0)
-	html_error(503, bbspath);
-
-    readconfig(bbspath);
-
-    if (!script)
-	script = getenv("SCRIPT_NAME");
-    if (!script)
+    if ( (script = getenv("SCRIPT_NAME")) == 0 )
 	script = "/bin/false";
-
-    if ( siteowner == 0 && (siteowner = getenv("REMOTE_USER")) == 0)
-	html_error(500, "I don't know who you are!");
 
     uncgi();
 
@@ -334,13 +260,13 @@ main(int argc, char **argv, char **envp)
 	help = 1;
 
     if (url == 0)
-	html_error(500, "Nothing to comment to?");
+	bbs_error(500, "Nothing to comment to?");
 
     if (getenv("WWW_post")) {
 	if (text && name && (email||website) ) {
 
 	    if ( comment(name,email,website,text,url) ) {
-		printf("HTTP/1.0 307 Ok\r\n"
+		printf("HTTP/1.0 303 Ok\r\n"
 		       "Location: %s%s\n"
 		       "\n", bbsroot, url);
 		exit(0);
@@ -352,7 +278,7 @@ main(int argc, char **argv, char **envp)
 	/* complain about missing items */
     }
     else if (getenv("WWW_cancel")) {
-	printf("HTTP/1.0 307 Ok\n"
+	printf("HTTP/1.0 303 Ok\n"
 	       "Location: %s\n"
 	       "\n", bbsroot);
 	exit(0);
@@ -360,7 +286,7 @@ main(int argc, char **argv, char **envp)
 
 
     if ( (themfile = alloca(strlen(bbspath) + 20)) == 0 )
-	html_error(503, "Out of memory!");
+	bbs_error(503, "Out of memory!");
 
     printf("Content-Type: text/html; charset=iso-8859-1\r\n"
 	   "Connection: close\r\n"
@@ -369,7 +295,6 @@ main(int argc, char **argv, char **envp)
 	   "\r\n", script);
 
     stash("_DOCUMENT", script);
-    stash("_USER", siteowner);
 
     sprintf(themfile, "%s/post.theme", bbspath);
     process(themfile, putbody, 1, stdout);

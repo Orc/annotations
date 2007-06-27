@@ -20,8 +20,8 @@ extern int dirent_is_good(struct dirent *e);
  */
 #define EX_HTML		0x01	/* allow html */
 #define EX_ENTITY	0x02	/* allow character entities */
-#define CLIPPING	20000
-#define MORE		1000
+#define CLIPPING	400
+#define MORE		200
 
 char *
 excerpt(char *text, int textsize, int flags)
@@ -30,12 +30,13 @@ excerpt(char *text, int textsize, int flags)
     char *p, *e;
     int print = 1;
     int clip, size;
+    int dotdotdot;
 
     for (p=text, size=clip=0; (size < textsize) && (size < CLIPPING+MORE); ++p, ++size) {
 	if (*p == '<') print = 0;
 	if (print) {
 	    clip++;
-	    if (clip > CLIPPING && (*p == '.' || *p == '?' || *p == '!')) {
+	    if ((clip > CLIPPING) && (*p == '.' || *p == '?' || *p == '!')) {
 		++p, ++size;
 		break;
 	    }
@@ -44,6 +45,7 @@ excerpt(char *text, int textsize, int flags)
     }
 
     print = 1;
+    dotdotdot = (size < textsize);
     for (e=bfr, p=text; size > 0; ++p, --size) {
 	if ((*p == '<') && !(flags&EX_HTML) ) print = 0;
 	if (print) {
@@ -51,18 +53,39 @@ excerpt(char *text, int textsize, int flags)
 		while (size && (*p != ';'))
 		    ++p, --size;
 	    }
-	    else 
+	    else if (0x80 & *p) {
+		*e++ = '?';
+	    }
+	    else
 		*e++ = *p;
 	}
 	if ((*p == '>')) print = 1;
+    }
+    if (dotdotdot) {
+	*e++ = '.';
+	*e++ = '.';
+	*e++ = '.';
     }
     *e = 0;
     return bfr;
 }
 
 
+void
+ffilter(FILE *f, char *bfr, int len)
+{
+    for (; len-- > 0; ++bfr) {
+	if (*bfr & 0x80)
+	    fprintf(f, "&#%03d;", (unsigned char)(*bfr));
+	    /*putc('?', f);*/
+	else
+	    putc(*bfr, f);
+    }
+}
 
-/* Userlands RSS format */
+
+
+/* The Userland RSS format */
 
 
 static int
@@ -73,8 +96,11 @@ rss2header(FILE *f)
 
     strftime(tod, 80, "%a, %d %b %Y %H:%M:%S %Z", localtime(&now));
 
-    fprintf(f, "<?xml version=\"1.0\"?>\n"
-	       "<rss version=\"2.0\">\n"
+    fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+               "<rss"
+               "  xmlns:dc=\"http://purl.org/dc/elements/1.1/\""
+               "  xmlns:content=\"http://purl.org/rss/1.0/modules/content/\""
+	       "  version=\"2.0\">\n"
 	       "<channel>\n"
 	       "  <title>%s</title>\n", fmt.name);
     fprintf(f, "  <link>%s</link>\n", fmt.url);
@@ -125,9 +151,10 @@ rss2post(FILE *f, struct article *art)
 	       "    <pubDate>%s</pubDate>\n", fmt.url, art->url,
 					      fmt.url, art->url,
 					      tod);
-    fprintf(f, "    <description>%s</description>\n"
-	       "  </item>\n",
-		excerpt(art->body, art->size, 0) );
+    fprintf(f, "    <description><![CDATA[");
+    ffilter(f, art->body, art->size);
+    fprintf(f, "]]></description>\n");
+    fprintf(f, "  </item>\n");
 }
 
 
@@ -151,7 +178,7 @@ atomheader(FILE *f)
 
     strftime(tod, sizeof tod, "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
 
-    fprintf(f, "<?xml version=\"1.0\"?>\n"
+    fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
 	       "<feed version=\"0.3\" xmlns=\"http://purl.org/atom/ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n"
 	       "<title type=\"text/plain\">%s</title>\n"
 	       "<tagline type=\"text/plain\">%s</tagline>\n"
@@ -184,11 +211,11 @@ atompost(FILE *f, struct article *art)
     fprintf(f,"</title>\n"
 	       "    <link rel=\"alternate\" type=\"text/html\" href=\"%s/%s\" />\n",
 		    fmt.url, art->url);
-    fprintf(f, "    <content type=\"text/html\" xml:base=\"%s\">\n", fmt.url);
-    fprintf(f, "<![CDATA[\n\n"
-               "%s\n\n]]>\n"
-	       "    </content>\n",
-		       excerpt(art->body, art->size, EX_HTML|EX_ENTITY));
+    fprintf(f, "    <content type=\"text/html\" mode=\"escaped\" xml:lang=\"en-us\"  xml:base=\"%s\">\n", fmt.url);
+    fprintf(f, "    <![CDATA[");
+    ffilter(f, art->body, art->size);
+    fprintf(f, "]]>\n"
+	       "    </content>\n");
     fprintf(f, "    <issued>%s</issued>\n"
 	       "    <modified>%s</modified>\n"
 	       "    <author><name>%s</name></author>\n", tod, mod, art->author);

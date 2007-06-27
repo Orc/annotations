@@ -1,0 +1,31 @@
+Annotations is a collection of little programs that maintain weblogs.
+It is extremely lightweight -- all it requires is a Unix system and
+a C compiler.
+
+Annotations takes a few shortcuts on how the weblog is set up.  The
+configuration file for the weblog is always in the user htdocs directory
+(typically ~user/htdocs), and all of the archive pages and other indexes
+are also found there (you can have the weblog homepage be somewhere else,
+but this is not well tested.)   The annotations(7) manpage describes the
+various files and directories that annotations uses.
+
+
+REQUIREMENTS
+
+    1)	A modern Unix system (I've built it on Mastodon Linux,
+	which is not exactly the most modern system, so more
+	recent systems should be okay.)
+    2)	A C compiler
+    3)  A web server that supports Basic authentication and
+        cgi scripts (I use a lightly hacked version of thttpd)
+
+    4)  If you wish to publish articles via xml (using the Atom
+	publishing format, which is the _only_ format I found
+	documented), you need to install the expat and scew
+	libraries.
+
+Annotations is free software;  it is released under a BSD-style license
+that allows you to do as you wish with it as long as you don't attempt
+to claim it as your own work.
+
+The file INSTALL describes how to build and install postoffice

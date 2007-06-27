@@ -8,10 +8,21 @@
 ac_help='
 --wwwdir=DIR		system htdocs directory (@prefix@/htdocs)
 --cgidir=DIR		system cgi script directory (@WWWDIR@/cgi-bin)
---userdir=DIR		where user htdocs live (~user/htdocs)'
+--userdir=DIR		where user htdocs live (~user/htdocs)
+--webuser		the user that the web server runs as (nobody)'
 
 LOCAL_AC_OPTIONS='
 case X"$1" in
+X--exec-suffix=*)
+	    EXEC_SUFFIX=`echo "$1" | sed -e 's/^[^=]*=//'`
+	    EXEC_SUFFIX_SET=1
+	    shift 1
+	    ;;
+X--exec-suffix)
+	    EXEC_SUFFIX=$2
+	    EXEC_SUFFIX_SET=1
+	    shift 2
+	    ;;
 X--exec-prefix=*)
 	    EXEC_PREFIX=`echo "$1" | sed -e 's/^[^=]*=//'`
 	    EXEC_PREFIX_SET=1
@@ -46,6 +57,14 @@ X--userdir)
 	    AC_USERDIR=$2
 	    shift 2
 	    ;;
+X--webuser)
+	    WEBUSER=$2
+	    shift 2
+	    ;;
+X--webuser=*)
+	    WEBUSER=`echo "$1" | sed -e 's/^[^=]*=//'`
+	    shift 1
+	    ;;
 *)	    ac_error=1
 	    ;;
 esac'
@@ -66,6 +85,17 @@ AC_PROG_CC
 [ -z "$AC_CGIDIR" ] && AC_CGIDIR="$AC_WWWDIR/cgi-bin"
 [ -z "$AC_USERDIR" ] && AC_USERDIR="htdocs"
 
+if AC_ID_OF ${WEBUSER:-nobody}; then
+    LOG "WWW user      : ${WEBUSER:-nobody}, uid $av_UID, gid $av_GID"
+    AC_DEFINE WEB_UID	${av_UID}
+    AC_DEFINE WEB_GID	${av_GID}
+else
+    LOG "cannot find web user ${WEBUSER:-nobody}!"
+    LOG "You need to set webuser to the user that your web server runs as."
+    AC_FAIL "Sorry!"
+fi
+rm -f uid
+
 if AC_LIBRARY uncgi -luncgi; then
     AC_CONFIG CGIDIR  "$AC_CGIDIR"
     AC_CONFIG WWWDIR  "$AC_WWWDIR"
@@ -81,14 +111,18 @@ else
     AC_FAIL "Sorry!"
 fi
 
+if AC_LIBRARY scew_parser_create '-lscew -lexpat'; then
+    LOG "scew and expat found; building xmlpost"
+    AC_SUB XMLPOST xmlpost
+else
+    AC_SUB XMLPOST ''
+fi
+
 test -d "$AC_WWWDIR" || AC_FAIL "Cannot find web directory $AC_WWWDIR"
 test -d "$AC_CGIDIR" || AC_FAIL "Cannot find CGI directory $AC_CGIDIR"
 
-if [ "$EXEC_PREFIX_SET" ]; then
-    AC_SUB EXEC_PREFIX ${EXEC_PREFIX}
-else
-    AC_SUB EXEC_PREFIX bbs-
-fi
+AC_SUB EXEC_PREFIX ${EXEC_PREFIX}
+AC_SUB EXEC_SUFFIX ${EXEC_SUFFIX}
 
-AC_OUTPUT Makefile
-
+AC_OUTPUT Makefile setup.weblog annotations.7 weblog.conf.5 \
+                   setup.weblog.8 reindex.8

@@ -17,6 +17,8 @@ struct fmt {
     char *about;		/* one line description of the weblog */
     int nrposts;		/* # of articles on the homepage */
     int topsig;			/* signature at the start of a post? */
+    int linktitle;		/* titles are also used as permlinks */
+    int simplearchive;		/* do the archive as a list body */
     struct markup article;	/* markup around an article in index.html */
     struct markup body;		/* markup around the body of an article */
     struct markup title;	/*  "  "   " "       subject      " " */

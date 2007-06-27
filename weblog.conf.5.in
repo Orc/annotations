@@ -1,0 +1,85 @@
+.\"
+.\"     %Z%
+.\"
+.Dd Dec 26, 2005
+.Dt WEBLOG.CONF 5
+.Os MASTODON
+.Sh NAME
+.Nm weblog.conf
+.Nd configuration file for
+.Nm Annotations
+.Sh SYNOPSIS
+.Nm @USERDIR@/weblog.conf
+.Sh DESCRIPTION
+This file configures the weblog that is found
+in @USERDIR@.  It consists of lines in shell
+variable format (name=value).
+Annotations uses the following configuration variables:
+.Bl -tag -width CommentSep.start
+.It Name
+The name of the weblog
+.It HomePage
+The homepage of the weblog (default: index.html)
+.It Filter
+The pathname of a filter program that @EXEC_PREFIX@reindex (and
+the reindexing function that the post and comment programs use) will
+use when it regenerates pages.   This was added to make it easy to
+celebrate Talk Like a Pirate Day.
+.It URL
+The URL for this weblog.
+.It Author
+The email address of the author of this weblog
+.It About
+Keywords describing the weblog
+.It nrposts
+How many posts to show on the homepage of the weblog.
+.It topsig
+Whether to put the author signature at the top of each post
+or not (default: 0)
+.It Chapter.start
+HTML to put before date headers.
+.It Chapter.end
+HTML to put after date headers.
+.It Article.start
+HTML to put before each article.
+.It Article.end
+HTML to put after each article.
+.It Title.start
+HTML to put before the article title.
+.It Title.end
+HTML to put after the article title.
+.It Byline.start
+HTML to put before the author's byline.
+.It Byline.end
+HTML to put after the author's byline.
+.It Body.start
+HTML to put before the body of an article.
+.It Body.end
+HTML to put after the body of an article.
+.It Post.start
+HTML to put before the POST button on the post/index.html page
+.It Post.end
+HTML to put after the POST button on the post/index.html page
+.It LinkTitle
+If set, the title of an article is also a permalink to that article.
+.It SimpleArchive
+If set, Annotations generates a simple list for the weblog archive index.
+.It Comment.start
+HTML to put before the COMMENT button on pages.
+.It Comment.end
+HTML to put after the COMMENT button on pages.
+.It Archive.start
+If SimpleArchive is not set, this is the HTML that is put before the
+archive list.
+.It Archive.end
+If SimpleArchive is not set, this is the HTML that is put after the
+archive list.
+.It Separator
+HTML that is put between articles.
+.It CommentSep
+HTML that is put between comments.
+.El
+.Sh SEE ALSO
+.Xr annotations 7 ,
+.Xr @EXEC_PREFIX@reindex 8 ,
+.Xr setup.weblog 8

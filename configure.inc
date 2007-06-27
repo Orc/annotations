@@ -299,7 +299,7 @@ AC_CHECK_FIELD () {
 
     rm -f /tmp/ngc$$.c
 
-    for include in $*;do
+    for include in "$@";do
 	echo "#include <$include>" >> /tmp/ngc$$.c
     done
 
@@ -414,7 +414,7 @@ acLookFor () {
 	    ;;
     esac
     oldifs="$IFS"
-    for program in $*; do
+    for program in "$@"; do
 	IFS=":"
 	for x in $path; do
 	    if [ $__mode $x/$program -a -f $x/$program ]; then
@@ -530,6 +530,7 @@ EOF
     AC_DEFINE OS_$_os	1
     eval OS_${_os}=1
     unset _os
+    unset _dumper_compiled
 }
 
 
@@ -549,7 +550,7 @@ AC_LIBRARY() {
 
     # then search through the list of libraries
     __libs="$LIBS"
-    for x in $*; do
+    for x in "$@"; do
 	_sssh=T
 	LIBS="$__libs $x"
 	if AC_CHECK_FUNCS $SRC; then
@@ -776,7 +777,7 @@ EOF
 	__d=$AC_SRCDIR
 	test -d $AC_SRCDIR/SCCS && HAS_SCCS=1
 
-	for makefile in $*;do
+	for makefile in "$@";do
 	    test -r $__d/${makefile}.in || (cd $__d;get ${makefile}.in;)
 	    if test -r $__d/${makefile}.in; then
 		LOG "generating $makefile"
@@ -896,6 +897,96 @@ AC_PROG_CPP () {
 	fi
     fi
     AC_FAIL " (not found)"
+}
+
+
+#
+# __compile_dumper compiles the uid/gid dumper program
+__compile_dumper() {
+    AC_CHECK_HEADERS pwd.h grp.h ctype.h
+
+    # compile a little test program that can handle the many permutations
+    # of a user/group combo, since there doesn't seem to be a clean way of
+    # doing it using just system level stuff.
+    #             username  (uid,gid of this user)
+    #             user.group (uid of user, gid of group)
+    #             user.number (uid of user, specified gid)
+    #             number.group (specified uid, gid of group)
+    #             number.number (specified uid, gid)
+    #
+    cat << \EOF > $$.c
+#include <stdio.h>
+#include <pwd.h>
+#include <grp.h>
+#include <sys/types.h>
+#include <ctype.h>
+
+main(int argc, char **argv)
+{
+    struct passwd *pwd;
+    struct group *grp;
+
+    char *p, *q;
+
+    fprintf(stderr, "%s: UID/GID dumper for configure.sh\n", argv[0]);
+    printf("av_UID=; av_GID=;\n");
+    if (argc <= 1)
+	exit(1);
+
+    for (p = argv[1]; *p && (*p != ':') && (*p != '.'); ++p)
+	;
+
+    if (*p) {
+	*p++ = 0;
+	if ( pwd = getpwnam(argv[1]) )
+	    printf("av_UID=%d;\n", pwd->pw_uid);
+	else {
+	    for (q=argv[1]; isdigit(*q); ++q)
+		;
+	    if (*q == 0)
+		printf("av_UID=%s;\n", argv[1]);
+	    else
+		exit(1);
+	}
+
+	if ( grp = getgrnam(p) )
+	    printf("av_GID=%d;\n", grp->gr_gid);
+	else {
+	    for (q=p; isdigit(*q); ++q)
+		;
+	    if (*q == 0)
+		printf("av_GID=%s;\n", q);
+	    else
+		exit(1);
+	}
+    }
+    else if (pwd = getpwnam(argv[1]) )
+	printf("av_UID=%d;\nav_GID=%d;\n", pwd->pw_uid, pwd->pw_gid);
+    else
+	exit(1);
+    exit(0);
+}
+EOF
+    $AC_CC -o uid $$.c
+    status=$?
+    rm -f $$.c
+    test $? -eq 0 || AC_FAIL "Could not compile UID/GID dumper"
+    __config_files="$__config_files uid"
+}
+
+#
+# AC_ID_OF returns the uid/gid for some user 
+AC_ID_OF() {
+    if test -z "$_dumper_compiled"; then
+	__compile_dumper
+	_dumper_compiled=T
+    fi
+
+    eval `./uid $1`
+    if [ "$av_UID" -a "$av_GID" ]; then
+	return 0
+    fi
+    return 1
 }
 
 #

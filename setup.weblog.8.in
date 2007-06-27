@@ -1,0 +1,18 @@
+.Dd Dec 26, 2005
+.Dt SETUP.WEBLOG 8
+.Os MASTODON
+.Sh NAME
+.Nm setup.weblog
+.Nd Set up an Annotations weblog for a user
+.Sh SYNOPSIS
+.Nm setup.weblog
+.Op Ar User
+.Sh DESCRIPTION
+.Nm Setup.weblog
+sets up a weblog for a user, generating required directories, building
+the cgi shellscripts needed for posting, editing, and commenting,
+asking for the admin password, then generating the pages.
+.Sh SEE ALSO
+.Xr weblog.conf 5 ,
+.Xr annotations 7 ,
+.Xr @EXEC_PREFIX@reindex 8

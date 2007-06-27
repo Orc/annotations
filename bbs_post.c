@@ -13,7 +13,7 @@
 #include "formatting.h"
 
 void
-html_error(int code, char *why)
+bbs_error(int code, char *why)
 {
     int err = errno;
 
@@ -76,6 +76,8 @@ xgetenv(char *s)
 static void
 putbody(FILE *f)
 {
+    char *t;
+
     fputs("<DIV CLASS=\"postwindow\">\n", f);
     if ( (editing||preview) && (art->size > 1)) {
 	fputs("<DIV CLASS=\"previewbox\">\n", f);
@@ -90,7 +92,23 @@ putbody(FILE *f)
 
     fprintf(f, "<FORM METHOD=POST ACTION=\"%s\">\n", script);
     fputs("<DIV align=left CLASS=\"subjectbox\">Subject <INPUT TYPE=TEXT NAME=\"title\" SIZE=80 MAXLENGTH=180", f);
-    if (art->title) fprintf(f, " VALUE=\"%s\"", art->title);
+    if (art->title) {
+	fprintf(f, " VALUE=\"");
+	for (t = art->title; *t; ++t) {
+	    switch (*t) {
+	    case '&':
+		fprintf(f, "&amp;");
+		break;
+	    case '"':
+		fprintf(f, "&quot;");
+		break;
+	    default:
+		fputc(*t, f);
+		break;
+	    }
+	}
+	fputc('"', f);
+    }
     fputs(">\n", f);
     if (complain && !art->title)
 	fputs("<font class=\"alert\">Please enter a subject</font>\n", f);
@@ -163,92 +181,27 @@ main(int argc, char **argv)
 {
     FILE *theme;
     char *themfile;
-    char *bbsdir = "/";
     char *filetoedit = 0;
     register c;
     struct article scratch;
     char *p;
 
     openlog("bbs_post", LOG_PID, LOG_NEWS);
-    opterr = 0;
-    while ( (c = getopt(argc, argv, "d:eu:A:S:")) != EOF) {
-	switch (c) {
-	case 'S':
-	    script = optarg;
-	    break;
-	case 'A':
-	    author = optarg;
-	    break;
-	case 'd':
-	    bbsdir = optarg;
-	    break;
-	case 'u':
-	    username = optarg;
-	    break; 
-	case 'e':
-	    printenv=1;
-	    break;
-	}
+
+    if ( (argc > 1) && (strcmp(argv[1], "-e")) == 0) {
+	argc--;
+	argv++;
+	printenv=1;
     }
 
-    bbsroot = malloc(strlen(bbsdir)+2);
-    strcpy(bbsroot, bbsdir);
-    if (bbsroot[0] && bbsroot[strlen(bbsroot)-1] != '/')
-	strcat(bbsroot, "/");
+    initialize();
 
-    stash("weblog",bbsroot);
-    stash("_ROOT", bbsroot);
-
-    if ( (bbsdir[0] == '/') && (bbsdir[1] == '~') ) {
-	char *r = strchr(bbsdir+2, '/');
-
-	username = bbsdir+2;
-
-	if (r) {
-	    *r++ = 0;
-	    bbsdir = r;
-	}
-	else
-	    bbsdir = "";
-    }
-    if ( username) {
-	if ( (user = getpwnam(username)) == 0 )
-	    html_error(500, "User does not exist");
-
-	if (user->pw_uid == 0 || user->pw_gid == 0)
-	    html_error(500, "User cannot be root");
-
-	bbspath = malloc(strlen(user->pw_dir) +
-			 strlen(PATH_USERDIR) +
-			 strlen(bbsdir) + 4);
-
-	if (bbspath == 0)
-	    html_error(503, "Out of memory!");
-
-	if (setgid(user->pw_gid) || setuid(user->pw_uid))
-	    html_error(503, "Privilege confusion");
-
-	sprintf(bbspath, "%s/%s/%s", user->pw_dir, PATH_USERDIR, bbsdir);
-    }
-    else {
-	bbspath = malloc(strlen(PATH_WWWDIR) + strlen(bbsdir) + 3);
-	if (bbspath == 0)
-	    html_error(503, "Out of memory!");
-
-	sprintf(bbspath, "%s/%s", PATH_WWWDIR, bbsdir);
-    }
-
-    if (chdir(bbspath) != 0)
-	html_error(503, bbspath);
-
-    readconfig(bbspath);
     uncgi();
 
-    if (!script)
-	script = xgetenv("SCRIPT_NAME");
+    script = xgetenv("SCRIPT_NAME");
 
-    if ( author == 0 && (author = xgetenv("REMOTE_USER")) == 0)
-	html_error(500, "I don't know who you are!");
+    if ( (author = xgetenv("REMOTE_USER")) == 0)
+	bbs_error(500, "I don't know who you are!");
 
     if ( (text = xgetenv("WWW_text")) && (*text == 0) )
 	text = 0;
@@ -262,7 +215,7 @@ main(int argc, char **argv)
 
 	if ( filetoedit = xgetenv("WWW_url")) {
 	    if ( (art = openart(filetoedit)) == 0)
-		html_error(404, filetoedit);
+		bbs_error(404, filetoedit);
 	    else if (text) {
 		freeartbody(art);
 		art->body = text;
@@ -304,7 +257,7 @@ main(int argc, char **argv)
 	    syslog(LOG_INFO, "res (%s) is %d", editing?"edit":"post", res);
 
 	    if (res) {
-		printf("HTTP/1.0 307 Ok\r\n"
+		printf("HTTP/1.0 303 Ok\r\n"
 		       "Location: %s/post\n"
 		       "\n", bbsroot);
 		exit(0);
@@ -313,7 +266,7 @@ main(int argc, char **argv)
 	complain = (strcmp(p, "New Message") != 0);
     }
     else if (xgetenv("WWW_cancel")) {
-	printf("HTTP/1.0 307 Ok\n"
+	printf("HTTP/1.0 303 Ok\n"
 	       "Location: %s/post\n"
 	       "\n", bbsroot);
 	exit(0);
@@ -323,7 +276,7 @@ main(int argc, char **argv)
 
 
     if ( (themfile = alloca(strlen(bbspath) + 20)) == 0 )
-	html_error(503, "Out of memory!");
+	bbs_error(503, "Out of memory!");
 
 
     printf("Content-Type: text/html; charset=iso-8859-1\r\n"

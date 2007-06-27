@@ -1,17 +1,22 @@
 CC=@CC@
 LIBS=@LIBS@
 
-COMMON=theme.o rewrite.o
+COMMON=theme.o rewrite.o initialize.o
 
-POST_OBJS=format.o post.o bbs_post.o mapfile.o indexer.o rss.o readconfig.o $(COMMON)
+POST_OBJS=format.o post.o mapfile.o indexer.o rss.o readconfig.o $(COMMON)
 REINDEX_OBJS=format.o mapfile.o readconfig.o indexer.o reindex.o rss.o $(COMMON)
 COMMENT_OBJS=comment.o format.o mapfile.o readconfig.o indexer.o rss.o post.o $(COMMON)
-PGMS=post reindex comment
+PGMS=post reindex comment @XMLPOST@
+CGIDIR=@CGIDIR@
+EXEDIR=@exedir@
 
 all: $(PGMS)
 
-post: $(POST_OBJS)
-	$(CC) $(CFLAGS) -o $@ $(POST_OBJS) $(LIBS)
+post: $(POST_OBJS) bbs_post.o
+	$(CC) $(CFLAGS) -o $@ $(POST_OBJS) bbs_post.o $(LIBS)
+
+xmlpost: $(POST_OBJS) xmlpost.o
+	$(CC) $(CFLAGS) -o $@ $(POST_OBJS) xmlpost.o $(LIBS)
 
 reindex: $(REINDEX_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(REINDEX_OBJS) $(LIBS)
@@ -19,10 +24,22 @@ reindex: $(REINDEX_OBJS)
 comment: $(COMMENT_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(COMMENT_OBJS) $(LIBS)
 
-install: $(PGMS) @CGIDIR@
-	@INSTALL@ -m 4711 -o 0 -g 0 post @CGIDIR@/@EXEC_PREFIX@post
-	@INSTALL@ -m 4711 -o 0 -g 0 comment @CGIDIR@/@EXEC_PREFIX@comment
-	@INSTALL@ -m 4711 -o 0 -g 0 reindex @CGIDIR@/@EXEC_PREFIX@reindex
+install_:
+	true
+
+install_xmlpost:
+	@INSTALL@ -m 6711 -o 0 -g 0 xmlpost $(CGIDIR)/@EXEC_PREFIX@xmlpost@EXEC_SUFFIX@
+
+install: install_@XMLPOST@ $(PGMS) $(CGIDIR)
+	@INSTALL@ -m 6711 -o 0 -g 0 post $(CGIDIR)/@EXEC_PREFIX@post@EXEC_SUFFIX@
+	@INSTALL@ -m 6711 -o 0 -g 0 comment $(CGIDIR)/@EXEC_PREFIX@comment@EXEC_SUFFIX@
+	@INSTALL@ -m 6711 -o 0 -g 0 reindex $(CGIDIR)/@EXEC_PREFIX@reindex@EXEC_SUFFIX@
+	@INSTALL@ -m 6711 -o 0 -g 0 reindex $(EXEDIR)/@EXEC_PREFIX@reindex
+	@INSTALL@ -m 755  -o 0 -g 0 setup.weblog $(EXEDIR)
+	-@INSTALL_DATA@  annotations.7 @mandir@/man7
+	-@INSTALL_DATA@  weblog.conf.5 @mandir@/man5
+	-@INSTALL_DATA@  setup.weblog.8 @mandir@/man8
+	-@INSTALL_DATA@  reindex.8 @mandir@/man8/@EXEC_PREFIX@reindex.8
 
 clean:
 	rm -f *.o $(PGMS)
