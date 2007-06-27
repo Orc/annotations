@@ -153,7 +153,7 @@ comment(char *from, char *email,
     struct comment *cmt;
     FILE *out;
     time_t now;
-    struct tm *tm, *today;
+    struct tm tm, *today;
     int buildflags = PG_ARCHIVE;
     char *ip;
 
@@ -172,23 +172,21 @@ comment(char *from, char *email,
 	return 0;
     }
     if (ip = xgetenv("REMOTE_ADDR"))
-	syslog(LOG_INFO, "COMMENT TO %s FROM %s", art->url, ip);
+	syslog(LOG_INFO, "COMMENT TO %s%s FROM %s", bbsroot, art->url, ip);
     else
-	syslog(LOG_INFO, "COMMENT TO %s", art->url);
+	syslog(LOG_INFO, "COMMENT TO %s%s", bbsroot, art->url);
 
     art->comments++;
 
-    tm = localtime( &(art->timeofday) );
+    tm = *localtime( &(art->timeofday) );
     today = localtime( &now );
 
     writectl(art);
     writehtml(art);
 
-    generate(tm,bbspath,0,buildflags);
-    if ( (tm->tm_year == today->tm_year) && (tm->tm_mon == today->tm_mon) ) {
-	/*buildflags |= (PG_HOME|PG_POST);*/
-	generate(tm, ".", 0, PG_ALL);
-    }
+    if ( (tm.tm_year == today->tm_year) && (tm.tm_mon == today->tm_mon) )
+	buildflags |= (PG_HOME|PG_POST);
+    generate(&tm, bbspath, 0, buildflags);
 
     return cmt->publish ? 1 : 2;
 }

@@ -56,6 +56,8 @@ int   preview  = 0;
 int   comments_ok = 0;
 
 
+extern char *xgetenv(char*);
+
 static int
 boolenv(char *s)
 {
@@ -249,8 +251,16 @@ main(int argc, char **argv)
 
 	    if (res) {
 		printf("HTTP/1.0 303 Ok\r\n"
+		       "Content-Type: text/html\r\n"
 		       "Location: %s/post\n"
 		       "\n", bbsroot);
+		printf("<html><head><title>article %s</title></head>",
+			editing ? "updated" : "posted");
+		printf("<body><p>The article has been %s.  If your web browser"
+				"does not take you to the correct page, "
+				"<a href=\"%s/post\">click here</a></p></body>"
+				"</html>\n", editing ? "updated" : "posted",
+				bbsroot);
 		exit(0);
 	    }
 	}
@@ -260,6 +270,12 @@ main(int argc, char **argv)
 	printf("HTTP/1.0 303 Ok\n"
 	       "Location: %s/post\n"
 	       "\n", bbsroot);
+	printf("<html><head><title>%s cancelled</title></head>",
+		editing ? "edit" : "post");
+	printf("<body><p>%s cancelled.  If your web browser"
+			"does not take you to the correct page, "
+			"<a href=\"%s/post\">click here</a></p></body>"
+			"</html>\n", editing ? "Edit" : "Post", bbsroot);
 	exit(0);
     }
 
