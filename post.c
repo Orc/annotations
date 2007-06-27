@@ -40,23 +40,47 @@ addcomments(FILE *f, struct article *art)
 int
 post(struct article *art, char *bbspath)
 {
-    struct tm *tm;
+    struct tm tm;
+    extern char *lastlast;
     FILE *f;
 
 
     if ( chdir(bbspath) != 0 || newart(art) == 0) return 0;
 
-    tm = localtime(&art->timeofday);
+    tm = *localtime(&art->timeofday);
     art->modified = art->timeofday;
     art->url = makefile(art->ctlfile, "index.html");
+
+    if (f = fopen("index.db", "a")) {
+	flock(fileno(f), LOCK_EX);
+	fprintf(f, "%s:%s\n", art->url, art->title);
+	fflush(f);
+	flock(fileno(f), LOCK_UN);
+	fclose(f);
+    }
 
     writectl(art);
     writemsg(art, FM_IMAGES);
     writehtml(art);
 
-    generate(tm, bbspath, 0, PG_ALL);
-    syndicate(tm, bbspath, &rss2feed);
-    syndicate(tm, bbspath, &atomfeed);
+    if (lastlast) {
+	struct article *l;
+	char filename[80];
+	char *p;
+
+	strncpy(filename, lastlast, 80);
+	if ( p = strchr(filename, ':') ) {
+	    *p = 0;
+	    if (l = openart(filename)) {
+		writehtml(l);
+		freeart(l);
+	    }
+	}
+    }
+
+    generate(&tm,  bbspath, 0, PG_ALL);
+    syndicate(&tm, bbspath, &rss2feed);
+    syndicate(&tm, bbspath, &atomfeed);
     return 1;
 }
 
@@ -64,22 +88,22 @@ post(struct article *art, char *bbspath)
 int
 edit(struct article *art, char *bbspath)
 {
-    struct tm *tm, *today;
+    struct tm tm, *today;
     int buildflags = PG_ARCHIVE;
 
     if ( chdir(bbspath) != 0) return 0;
 
     art->modified = time(0);
-    tm = localtime( &art->timeofday );
+    tm = *localtime( &art->timeofday );
     today = localtime( &art->modified );
 
-    if ( (tm->tm_year == today->tm_year) && (tm->tm_mon == today->tm_mon) )
+    if ( (tm.tm_year == today->tm_year) && (tm.tm_mon == today->tm_mon) )
 	buildflags |= PG_HOME|PG_POST;
 
     writectl(art);
     writemsg(art, FM_COOKED);
     writehtml(art);
 
-    generate(tm, bbspath, 0, buildflags);
+    generate(&tm, bbspath, 0, buildflags);
     return 1;
 }

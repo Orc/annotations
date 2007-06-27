@@ -39,7 +39,7 @@ format(FILE *f, char *text, int flags)
 	didpara=1;
     }
 
-    for (p = text; *p; ++p) {
+    for (p = text; flags & FM_ONELINE ? (*p != '\n') : (*p); ++p) {
 	if ( (*p == '\n') && (p[1] == '\n') ) {
 	    ++p;
 	    if (!newpara) {
@@ -94,6 +94,12 @@ format(FILE *f, char *text, int flags)
 		    ++p;
 		fputc('?',f);
 	    }
+	    else if (*p == '<') {
+		while (*p && *p != '>')
+		    ++p;
+	    }
+	    else if ( 0x80 & *p)
+		fputc('?', f);
 	    else
 		fputc(*p, f);
 	}

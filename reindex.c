@@ -117,8 +117,7 @@ main(int argc, char **argv)
     struct passwd *user;
     int levels;
     time_t now = time(0);
-    struct tm *today;
-    struct tm *tm;
+    struct tm *tm, *today, pagetime;
     int buildarchivepage = 0;
     int buildhomepage = 0;
     int buildsyndicate = 0;
@@ -264,15 +263,15 @@ main(int argc, char **argv)
     else {
 	generate(tm, ".", full_rebuild, PG_ARCHIVE);
     }
-
+    pagetime = *localtime(&now);
 
     if (buildhomepage)
-	generate(tm, ".", 1, PG_HOME|PG_POST);
+	generate(&pagetime, ".", 1, PG_HOME|PG_POST);
 
 
     if (buildsyndicate) {
-	syndicate(tm, bbsroot, &rss2feed);
-	syndicate(tm, bbsroot, &atomfeed);
+	syndicate(&pagetime, bbsroot, &rss2feed);
+	syndicate(&pagetime, bbsroot, &atomfeed);
     }
 
     exit(0);

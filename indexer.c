@@ -359,6 +359,95 @@ writemsg(struct article *art, int flags)
 }
 
 
+static void
+alink(FILE *f, char *pfx, char *sfx, char *line, char *end)
+{
+    fprintf(f, "%s<a href=%s/",pfx, fmt.url);
+    while (*line != ':' && line < end)
+	putc(*line++, f);
+    putc('>', f);
+    if (*line == ':')
+	format(f, ++line, FM_ONELINE);
+    fprintf(f, "</a>%s\n",sfx);
+}
+
+
+char *lastlast;
+
+static void
+navbar(FILE *f, char *url)
+{
+    static char *db = 0;
+    static int size, usize;
+    static int hasdb = 1;
+    char *end;
+    char *p, *low, *high;
+    int ret, gap;
+
+    lastlast = 0;
+
+    if (fmt.url == 0)
+	return;
+
+    if ( hasdb && !db ) {
+	db = mapfile("index.db", &size);
+	hasdb = (db != 0);
+    }
+    if ( !hasdb )
+	return;
+
+
+    high = end = db + size;
+    low = db;
+    usize = strlen(url);
+
+    while (low < high) {
+	gap = high-low;
+	p = low + (gap/2);
+
+	while (p > low && p[-1] != '\n')
+	    --p;
+
+	ret = strncmp(url, p, usize);
+
+	if (ret < 0)
+	    high = p;
+	else if (ret > 0) {
+	    low = p;
+	    while (low < high && *low != '\n')
+		++low;
+	    if (low < high) low++;
+	}
+	else {
+	    char *next, *last;
+
+	    fprintf(f, "<p class=\"navbar\">\n");
+
+	    for (next=p; next < end && *next != '\n'; ++next)
+		;
+	    if (next < end-1) {
+		++next;
+		alink(f, "&laquo; ", " ", next, end);
+	    }
+	    else
+		next=0;
+
+	    if (p > db) {
+		last = p-1;
+		while (last > db && last[-1] != '\n')
+		    --last;
+		if (next)
+		    fprintf(f, " &middot; ");
+		lastlast = last;
+		alink(f, " ", " &raquo;", last, p);
+	    }
+	    fprintf(f, "</p>\n");
+	    return;
+	}
+    }
+}
+
+
 static struct article *htmlart = 0;
 
 static int
@@ -367,8 +456,9 @@ puthtml(FILE *f)
     char *text;
     long  size;
 
-    subject(f,htmlart->title);
-    if (fmt.topsig) byline(f,htmlart, 0);
+    navbar(f, htmlart->url);
+    subject(f, htmlart->title);
+    if (fmt.topsig) byline(f, htmlart, 0);
 
     if (text = mapfile(htmlart->msgfile, &size)) {
 	fprintf(f, "<!-- message -->\n");
@@ -487,9 +577,8 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 	    /*free(*dp);*/
 	}
 
-	m.tm_mon--;
-	if (m.tm_mon < 1) {
-	    m.tm_mon = 12;
+	if (--m.tm_mon < 1) {
+	    m.tm_mon = 11;
 	    m.tm_year--;
 	}
 	strftime(mo, sizeof mo, "%Y/%m", &m);
@@ -602,8 +691,7 @@ buildpages(struct tm *tm, int which)
 	    fclose(f);
 	}
     }
-
-    if (which & PG_HOME) {
+    else if (which & PG_HOME) {
 	/* set stdout to -> index.html */
 	if ( f = fopen("index.html", "w") ) {
 	    sprintf(archive, "%sindex.html", bbsroot);
@@ -614,8 +702,7 @@ buildpages(struct tm *tm, int which)
 	    fclose(f);
 	}
     }
-
-    if (which & PG_POST) {
+    else if (which & PG_POST) {
 	/* set stdout to -> post/index.html */
 	if ( f = fopen("post/index.html", "w") ) {
 	    sprintf(archive, "%spost/index.html", bbsroot);
@@ -638,7 +725,6 @@ generate(struct tm *tm, char *bbspath, int indexflags, int buildflags)
 {
     int nrposts = 0;
     unsigned int flag;
-
 
     for (flag = 0x01; flag; flag <<= 1)
 	if (buildflags & flag) {

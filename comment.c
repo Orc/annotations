@@ -41,6 +41,7 @@ struct passwd *user;
 char *bbspath  = "";
 char *bbsroot  = "";
 
+int fillin      = 0;
 int printenv    = 0;
 int preview     = 0;
 int help        = 0;
@@ -61,8 +62,14 @@ putbody(FILE *f)
 
     fputs("<DIV ID=\"postwindow\">\n", f);
 
+    if (fillin) {
+	fprintf(f, "<p>Please enter your name, email or website,\n");
+	fprintf(f, "and some text.</p>\n");
+    }
+
     fprintf(f, "<!-- preview = %d, |text| = %d -->\n", preview,
 		    text ? strlen(text) : 0);
+
     if ( preview && text && (strlen(text) > 1) ) {
 	fputs("<DIV ID=\"previewbox\">\n", f);
 	format(f, text, FM_BLOCKED);
@@ -78,15 +85,23 @@ putbody(FILE *f)
     fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", url);
     fprintf(f, "<DIV align=left ID=\"Name\">Name"
 	       "<INPUT TYPE=TEXT NAME=\"name\" SIZE=40 MAXLENGTH=180"
-	       " VALUE=\"%s\"><br>\n", name ? name : "");
-    fprintf(f, "<DIV align=left ID=\"Email\">Email"
+	       " VALUE=\"%s\">\n", name ? name : "");
+    if (fillin && !name)
+	fprintf(f, " <font id=alert>Please enter your name</font>\n");
+    fprintf(f, "<br><DIV align=left ID=\"Email\">Email"
 	       "<INPUT TYPE=TEXT NAME=\"email\" SIZE=40 MAXLENGTH=180"
-	       " VALUE=\"%s\"><br>\n", email ? email : "");
-    fprintf(f, "<DIV align=left ID=\"URL\">Website "
+	       " VALUE=\"%s\">\n", email ? email : "");
+    if (fillin && !email)
+	fprintf(f, " <font id=alert>Please enter your email address</font>\n");
+    fprintf(f, "<br><DIV align=left ID=\"URL\">Website "
 	       "<INPUT TYPE=TEXT NAME=\"website\" SIZE=40 MAXLENGTH=180"
-	       " VALUE=\"%s\"><br>\n", website ? website : "");
+	       " VALUE=\"%s\">\n", website ? website : "");
+    if (fillin && !email)
+	fprintf(f, " <font id=alert>Please enter your website</font>\n");
 
-    fprintf(f, "<DIV ID=\"inputbox\">\n"
+    if (fillin && !text)
+	fprintf(f, "<br><p id=alert>Please enter a message</p>\n");
+    fprintf(f, "<br><DIV ID=\"inputbox\">\n"
 	       "<FONT BGCOLOR=silver>\n"
 	       "<TEXTAREA NAME=_text ROWS=%d COLS=80 WRAP=SOFT>\n",rows);
 
@@ -157,16 +172,20 @@ comment(char *from, char *email, char *website, char *text, char *article)
     format(out, text, FM_BLOCKED);
     fprintf(out, "</DIV>\n");
     fprintf(out, "<DIV ID=\"commentsig\">\n");
-    if (email && strlen(email) > 0)
-	fprintf(out, "<a href=\"mailto:%s\">%s</a>\n", email, from);
+
+    if (email || website) {
+	if (website) {
+	    if (strncasecmp(website, "http://", 7) == 0)
+		fprintf(out, "<a href=\"%s\">%s</a>\n", website, from);
+	    else
+		fprintf(out, "<a href=\"http://%s\">%s</a>\n", website, from);
+	}
+	else
+	    fprintf(out, "<a href=\"mailto:%s\">%s</a>\n", email, from);
+    }
     else
 	fprintf(out, "%s ", from);
-    if (website && strlen(website) > 0) {
-	if (strncasecmp(website, "http://", 7) == 0)
-	    fprintf(out, "<a href=\"%s\">website</a>\n", website);
-	else
-	    fprintf(out, "<a href=\"http://%s\">website</a>\n", website);
-    }
+
     time(&now);
     fputs(ctime(&now), out);
     fprintf(out, "</DIV>\n");
@@ -192,6 +211,20 @@ comment(char *from, char *email, char *website, char *text, char *article)
 }
 
 
+static char *
+xgetenv(char *e)
+{
+    char *p = getenv(e);
+
+
+    if (p && strlen(p)) {
+	while (isspace(*p) && *p)
+	    ++p;
+	return (*p) ? p : 0;
+    }
+    return 0;
+}
+
 main(int argc, char **argv, char **envp)
 {
     FILE *theme;
@@ -205,6 +238,7 @@ main(int argc, char **argv, char **envp)
 
     openlog("comment", LOG_PID, LOG_NEWS);
 
+    fillin = 0;
     opterr = 0;
     while ( (c = getopt(argc, argv, "d:eu:A:S:")) != EOF) {
 	switch (c) {
@@ -289,10 +323,11 @@ main(int argc, char **argv, char **envp)
 
     uncgi();
 
-    text    = getenv("WWW_text");
-    name    = getenv("WWW_name");
-    email   = getenv("WWW_email");
-    website = getenv("WWW_website");
+    text    = xgetenv("WWW_text");
+    name    = xgetenv("WWW_name");
+    email   = xgetenv("WWW_email");
+    website = xgetenv("WWW_website");
+
     preview = getenv("WWW_preview") != 0;
     url     = getenv("WWW_url");
     if ( (p = getenv("WWW_help")) != 0 && strncasecmp(p, "Show", 4) == 0)
@@ -313,7 +348,7 @@ main(int argc, char **argv, char **envp)
 	    syslog(LOG_ERR, "Oops#1");
 	}
 	else
-	    syslog(LOG_ERR, "Oops#2");
+	    fillin = 1;
 	/* complain about missing items */
     }
     else if (getenv("WWW_cancel")) {
@@ -322,6 +357,7 @@ main(int argc, char **argv, char **envp)
 	       "\n", bbsroot);
 	exit(0);
     }
+
 
     if ( (themfile = alloca(strlen(bbspath) + 20)) == 0 )
 	html_error(503, "Out of memory!");

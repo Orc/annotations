@@ -41,6 +41,7 @@ static struct article *art;
 int help;
 char *p, *q;
 int rows;
+int complain = 0;
 struct passwd *user;
 int   didpara  = 0;
 int   printenv = 0;
@@ -59,6 +60,16 @@ static int
 boolenv(char *s)
 {
     return getenv(s) != 0;
+}
+
+static char *
+xgetenv(char *s)
+{
+    char *val = getenv(s);
+
+    if (val && val[0])
+	return val;
+    return 0;
 }
 
 
@@ -80,7 +91,10 @@ putbody(FILE *f)
     fprintf(f, "<FORM METHOD=POST ACTION=\"%s\">\n", script);
     fputs("<DIV align=left ID=\"subjectbox\">Subject <INPUT TYPE=TEXT NAME=\"title\" SIZE=80 MAXLENGTH=180", f);
     if (art->title) fprintf(f, " VALUE=\"%s\"", art->title);
-    fputs("><BR></DIV>\n", f);
+    fputs(">\n", f);
+    if (complain && !art->title)
+	fputs("<font class=\"alert\">Please enter a subject</font>\n", f);
+    fputs("<BR></DIV>\n", f);
 
     fprintf(f, "<DIV ID=\"inputbox\">\n"
 	       "<TEXTAREA NAME=_text ROWS=%d COLS=80 WRAP=SOFT>\n",rows);
@@ -89,10 +103,15 @@ putbody(FILE *f)
 	for (p=art->body; *p; ++p)
 	    if (*p == '&')
 		fprintf(f, "&amp;");
+	    else if (*p == '<')
+		fprintf(f, "&lt;");
 	    else
 		fputc(*p, f);
     
-    fputs("</TEXTAREA></FONT></DIV>\n", f);
+    fputs("</TEXTAREA></FONT>\n", f);
+    if (complain && !art->body)
+	fputs("<BR><font class=\"alert\">Please enter a message</font>\n", f);
+    fputs("</DIV>\n", f);
 
     fputs("<DIV ALIGN=LEFT ID=\"checkbox\">\n"
 	  "Allow&nbsp;comments"
@@ -148,6 +167,7 @@ main(int argc, char **argv)
     char *filetoedit = 0;
     register c;
     struct article scratch;
+    char *p;
 
     openlog("bbs_post", LOG_PID, LOG_NEWS);
     opterr = 0;
@@ -225,22 +245,22 @@ main(int argc, char **argv)
     uncgi();
 
     if (!script)
-	script = getenv("SCRIPT_NAME");
+	script = xgetenv("SCRIPT_NAME");
 
-    if ( author == 0 && (author = getenv("REMOTE_USER")) == 0)
+    if ( author == 0 && (author = xgetenv("REMOTE_USER")) == 0)
 	html_error(500, "I don't know who you are!");
 
-    if ( (text = getenv("WWW_text")) && (*text == 0) )
+    if ( (text = xgetenv("WWW_text")) && (*text == 0) )
 	text = 0;
 
     preview = boolenv("WWW_previewing") | boolenv("WWW_preview");
-    title = getenv("WWW_title");
+    title = xgetenv("WWW_title");
 
     comments_ok = 0;
     if ( editing = boolenv("WWW_edit") ) {
 	char *filetoedit;
 
-	if ( filetoedit = getenv("WWW_url")) {
+	if ( filetoedit = xgetenv("WWW_url")) {
 	    if ( (art = openart(filetoedit)) == 0)
 		html_error(404, filetoedit);
 	    else if (text) {
@@ -267,12 +287,12 @@ main(int argc, char **argv)
 
 	art->author = author;
 	art->title = title;
-	art->url = getenv("WWW_url");
+	art->url = xgetenv("WWW_url");
 	time(&art->timeofday);
     }
     art->comments_ok = comments_ok;
 
-    if (boolenv("WWW_post")) {
+    if (p = xgetenv("WWW_post")) {
 	if (art->author && art->title && art->body) {
 	    int res ;
 
@@ -290,9 +310,9 @@ main(int argc, char **argv)
 		exit(0);
 	    }
 	}
-	/* complain about missing items */
+	complain = (strcmp(p, "New Message") != 0);
     }
-    else if (getenv("WWW_cancel")) {
+    else if (xgetenv("WWW_cancel")) {
 	printf("HTTP/1.0 307 Ok\n"
 	       "Location: %s/post\n"
 	       "\n", bbsroot);

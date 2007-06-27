@@ -37,5 +37,6 @@ void format(FILE*, char *, int);
 #define	FM_PREVIEW	0x04
 #define FM_BLOCKED	0x08	/* should the format be wrapped in <p>? */
 #define FM_STRIP	0x10
+#define FM_ONELINE	0x20	/* format only one line */
 
 #endif/*__FORMATTING_D*/

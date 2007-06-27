@@ -121,7 +121,7 @@ rss2post(FILE *f, struct article *art)
     format(f, art->title, FM_STRIP);
     fprintf(f,"</title>\n"
 	       "    <link>%s/%s</link>\n"
-	       "    <guid permalink=\"true\">%s/%s</guid>\n"
+	       "    <guid isPermaLink=\"true\">%s/%s</guid>\n"
 	       "    <pubDate>%s</pubDate>\n", fmt.url, art->url,
 					      fmt.url, art->url,
 					      tod);
@@ -178,9 +178,9 @@ atompost(FILE *f, struct article *art)
     fprintf(f, "\n"
 	       "  <entry>\n"
 	       "    <id>%s/%s</id>\n"
-	       "    <title type=\"text/html\">",
+	       "    <title>",
 		    fmt.url, art->url);
-    format(f, art->title, 0);
+    format(f, art->title, FM_STRIP);
     fprintf(f,"</title>\n"
 	       "    <link rel=\"alternate\" type=\"text/html\" href=\"%s/%s\" />\n",
 		    fmt.url, art->url);
@@ -224,6 +224,7 @@ syndicate(struct tm *tm, char *bbspath, struct syndicator *dsw)
 {
     char mo[20];
 
+    struct tm m;
     FILE *rssf;
     int fd;
     struct dirent **days, **each;
@@ -231,6 +232,7 @@ syndicate(struct tm *tm, char *bbspath, struct syndicator *dsw)
     struct dirent **dp, **ap;
     char **files;
     int nrfiles, count;
+    int tries = 2;
     char scratch[20];
     char tod[80];
     int even = 0;
@@ -249,12 +251,15 @@ syndicate(struct tm *tm, char *bbspath, struct syndicator *dsw)
     (*dsw->header)(rssf);
 
 
-    strftime(mo, sizeof mo, "%Y/%m", tm);
+    m = *tm;
 
     files = malloc(sizeof *files * (nrfiles = 1000));
     count=0;
 
-    if ( (dmax=scandir(mo, &days, dirent_is_good, dirent_nsort)) > 0) {
+    while (tries--) {
+	strftime(mo, sizeof mo, "%Y/%m", &m);
+	dmax = scandir(mo, &days, dirent_is_good, dirent_nsort);
+
 	for (j=dmax; j-- > 0; ) {
 
 	    sprintf(dydir, "%s/%s", mo, days[j]->d_name);
@@ -263,6 +268,7 @@ syndicate(struct tm *tm, char *bbspath, struct syndicator *dsw)
 
 	    for (k = emax; k-- > 0; ) {
 		char nmbuf[200];
+
 		sprintf(nmbuf, "%s/%s/message.ctl", dydir, each[k]->d_name);
 		if (count >= nrfiles-5)
 		    files = realloc(files, sizeof *files * (nrfiles += 1000));
@@ -270,6 +276,12 @@ syndicate(struct tm *tm, char *bbspath, struct syndicator *dsw)
 		/*free(*ap);*/
 	    }
 	    /*free(*dp);*/
+	}
+	if (count > fmt.nrposts)
+	    break;
+	if ( --m.tm_mon < 1) {
+	    m.tm_mon = 12;
+	    m.tm_year--;
 	}
     }
 
