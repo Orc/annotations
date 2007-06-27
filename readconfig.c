@@ -35,6 +35,7 @@ static struct _keys {
     void *ptr;
 } keys[] = {
     IT("Name", SINGLE, name),
+    IT("HomePage", SINGLE, homepage),
     IT("URL", SINGLE, url),
     IT("Author",SINGLE, author),
     IT("About", SINGLE, about),
@@ -67,22 +68,23 @@ readconfig(char *path)
 
     memset(&fmt, 0, sizeof fmt);
     fmt.name          = "";
-    fmt.chapter.start = "<H2 class=chapter>";
+    fmt.homepage      = "index.html";
+    fmt.chapter.start = "<H2 CLASS=chapter>";
     fmt.chapter.end   = "</H2>";
-    fmt.article.start = "<div id=article>";
+    fmt.article.start = "<div CLASS=article>";
     fmt.article.end   = "</div>";
-    fmt.title.start   = "<H3 class=title>";
+    fmt.title.start   = "<H3 CLASS=title>";
     fmt.title.end     = "</H3>";
-    fmt.byline.start  = "<p class=byline>--";
+    fmt.byline.start  = "<p CLASS=byline>--";
     fmt.byline.end    = "</p>";
-    fmt.body.start    = "<div id=body>";
+    fmt.body.start    = "<div CLASS=body>";
     fmt.body.end      = "</div>";
-    fmt.post.start    = "<h4 class=post>";
+    fmt.post.start    = "<h4 CLASS=post>";
     fmt.post.end      = "</h4>";
-    fmt.edit.start    = "<p class=edit>";
+    fmt.edit.start    = "<p CLASS=edit>";
     fmt.edit.end      = "</p>";
-    fmt.archive.start = "<hr class=archive><h2 class=archive>Archives</h2>";
-    fmt.comment.start = "<p class=comment>";
+    fmt.archive.start = "<hr CLASS=archive><h2 CLASS=archive>Archives</h2>";
+    fmt.comment.start = "<p CLASS=comment>";
     fmt.comment.end   = "</p>";
     fmt.commentsep    = "<hr>";
     fmt.separator     = "";

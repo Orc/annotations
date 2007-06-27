@@ -76,9 +76,9 @@ xgetenv(char *s)
 static void
 putbody(FILE *f)
 {
-    fputs("<DIV ID=\"postwindow\">\n", f);
+    fputs("<DIV CLASS=\"postwindow\">\n", f);
     if ( (editing||preview) && (art->size > 1)) {
-	fputs("<DIV ID=\"previewbox\">\n", f);
+	fputs("<DIV CLASS=\"previewbox\">\n", f);
 	article(f, art, editing ? FM_COOKED : (FM_PREVIEW|FM_IMAGES));
 	fputs("</DIV>\n"
 	      "<HR>\n", f);
@@ -89,14 +89,14 @@ putbody(FILE *f)
     }
 
     fprintf(f, "<FORM METHOD=POST ACTION=\"%s\">\n", script);
-    fputs("<DIV align=left ID=\"subjectbox\">Subject <INPUT TYPE=TEXT NAME=\"title\" SIZE=80 MAXLENGTH=180", f);
+    fputs("<DIV align=left CLASS=\"subjectbox\">Subject <INPUT TYPE=TEXT NAME=\"title\" SIZE=80 MAXLENGTH=180", f);
     if (art->title) fprintf(f, " VALUE=\"%s\"", art->title);
     fputs(">\n", f);
     if (complain && !art->title)
 	fputs("<font class=\"alert\">Please enter a subject</font>\n", f);
     fputs("<BR></DIV>\n", f);
 
-    fprintf(f, "<DIV ID=\"inputbox\">\n"
+    fprintf(f, "<DIV CLASS=\"inputbox\">\n"
 	       "<TEXTAREA NAME=_text ROWS=%d COLS=80 WRAP=SOFT>\n",rows);
 
     if (art->body)
@@ -113,14 +113,14 @@ putbody(FILE *f)
 	fputs("<BR><font class=\"alert\">Please enter a message</font>\n", f);
     fputs("</DIV>\n", f);
 
-    fputs("<DIV ALIGN=LEFT ID=\"checkbox\">\n"
+    fputs("<DIV ALIGN=LEFT CLASS=\"checkbox\">\n"
 	  "Allow&nbsp;comments"
 	  "<INPUT TYPE=\"checkbox\" NAME=\"commentsok\"",f);
     if (comments_ok)
 	fputs(" checked", f);
     fputs("></DIV>\n",f);
 
-    fputs("<DIV ALIGN=LEFT ID=\"controls\">\n", f);
+    fputs("<DIV ALIGN=LEFT CLASS=\"controls\">\n", f);
     fprintf(f, "<INPUT TYPE=HIDDEN NAME=comments value=%d>\n", art->comments);
 
     if (preview || editing)

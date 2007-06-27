@@ -279,8 +279,8 @@ syndicate(struct tm *tm, char *bbspath, struct syndicator *dsw)
 	}
 	if (count > fmt.nrposts)
 	    break;
-	if ( --m.tm_mon < 1) {
-	    m.tm_mon = 12;
+	if ( --m.tm_mon < 0) {
+	    m.tm_mon = 11;
 	    m.tm_year--;
 	}
     }

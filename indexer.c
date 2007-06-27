@@ -19,7 +19,7 @@ extern char *fetch(char*);
 extern char *eoln(char*,char*);
 
 /*
- * rebuild $bbsroot/index.html		{ all articles this month }
+ * rebuild $bbsroot/${HomePage}		{ all articles this month }
  *         $bbsroot/YYYY/MM/index.html	{ ditto }
  */
 static char art[25];	/* YYYY/MM/DD/###/message.{txt|inf} */
@@ -577,7 +577,7 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 	    /*free(*dp);*/
 	}
 
-	if (--m.tm_mon < 1) {
+	if (--m.tm_mon < 0) {
 	    m.tm_mon = 11;
 	    m.tm_year--;
 	}
@@ -692,9 +692,9 @@ buildpages(struct tm *tm, int which)
 	}
     }
     else if (which & PG_HOME) {
-	/* set stdout to -> index.html */
-	if ( f = fopen("index.html", "w") ) {
-	    sprintf(archive, "%sindex.html", bbsroot);
+	/* set stdout to -> {HomePage} */
+	if ( f = fopen(fmt.homepage, "w") ) {
+	    sprintf(archive, "%s%s", bbsroot, fmt.homepage);
 	    stash("_DOCUMENT", archive);
 	    stash("_CONTEXT", "home");
 	    stash("title", fmt.name);

@@ -60,7 +60,7 @@ putbody(FILE *f)
     int rows;
     char *p;
 
-    fputs("<DIV ID=\"postwindow\">\n", f);
+    fputs("<DIV CLASS=\"postwindow\">\n", f);
 
     if (fillin) {
 	fprintf(f, "<p>Please enter your name, email or website,\n");
@@ -71,7 +71,7 @@ putbody(FILE *f)
 		    text ? strlen(text) : 0);
 
     if ( preview && text && (strlen(text) > 1) ) {
-	fputs("<DIV ID=\"previewbox\">\n", f);
+	fputs("<DIV CLASS=\"previewbox\">\n", f);
 	format(f, text, FM_BLOCKED);
 	fputs("</DIV>\n"
 	      "<HR>\n", f);
@@ -83,25 +83,25 @@ putbody(FILE *f)
 
     fprintf(f, "<FORM METHOD=POST ACTION=\"%s\">\n", script);
     fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", url);
-    fprintf(f, "<DIV align=left ID=\"Name\">Name"
+    fprintf(f, "<DIV align=left CLASS=\"Name\">Name"
 	       "<INPUT TYPE=TEXT NAME=\"name\" SIZE=40 MAXLENGTH=180"
 	       " VALUE=\"%s\">\n", name ? name : "");
     if (fillin && !name)
-	fprintf(f, " <font id=alert>Please enter your name</font>\n");
-    fprintf(f, "<br><DIV align=left ID=\"Email\">Email"
+	fprintf(f, " <font CLASS=alert>Please enter your name</font>\n");
+    fprintf(f, "<br><DIV align=left CLASS=\"Email\">Email"
 	       "<INPUT TYPE=TEXT NAME=\"email\" SIZE=40 MAXLENGTH=180"
 	       " VALUE=\"%s\">\n", email ? email : "");
     if (fillin && !email)
-	fprintf(f, " <font id=alert>Please enter your email address</font>\n");
-    fprintf(f, "<br><DIV align=left ID=\"URL\">Website "
+	fprintf(f, " <font CLASS=alert>Please enter your email address</font>\n");
+    fprintf(f, "<br><DIV align=left CLASS=\"URL\">Website "
 	       "<INPUT TYPE=TEXT NAME=\"website\" SIZE=40 MAXLENGTH=180"
 	       " VALUE=\"%s\">\n", website ? website : "");
     if (fillin && !email)
-	fprintf(f, " <font id=alert>Please enter your website</font>\n");
+	fprintf(f, " <font CLASS=alert>Please enter your website</font>\n");
 
     if (fillin && !text)
-	fprintf(f, "<br><p id=alert>Please enter a message</p>\n");
-    fprintf(f, "<br><DIV ID=\"inputbox\">\n"
+	fprintf(f, "<br><p CLASS=alert>Please enter a message</p>\n");
+    fprintf(f, "<br><DIV CLASS=\"inputbox\">\n"
 	       "<FONT BGCOLOR=silver>\n"
 	       "<TEXTAREA NAME=_text ROWS=%d COLS=80 WRAP=SOFT>\n",rows);
 
@@ -114,7 +114,7 @@ putbody(FILE *f)
     
     fputs("</TEXTAREA></FONT></DIV>\n", f);
 
-    fputs("<DIV ALIGN=LEFT ID=\"controls\">\n", f);
+    fputs("<DIV ALIGN=LEFT CLASS=\"controls\">\n", f);
 
     if (preview)
 	fprintf(f, "<INPUT TYPE=HIDDEN NAME=preview VALUE=Preview>\n");
@@ -131,7 +131,7 @@ putbody(FILE *f)
 	  "</FORM>\n", f);
 
     if (help)
-	fputs("<DIV ID=\"helpbox\" ALIGN=LEFT><HR>\n"
+	fputs("<DIV CLASS=\"helpbox\" ALIGN=LEFT><HR>\n"
 	      " *text* <b>boldfaces</b> text; \n"
 	      " _text_ <i>italicizes</i> text; \n"
 	      " a blank line starts a new paragraph\n"
@@ -166,12 +166,12 @@ comment(char *from, char *email, char *website, char *text, char *article)
     }
     flock(fileno(out), LOCK_EX);
 
-    fprintf(out, "<DIV ID=\"comment\">\n");
+    fprintf(out, "<DIV CLASS=\"comment\">\n");
     if (art->comments > 0)
 	fputs(fmt.commentsep, out);
     format(out, text, FM_BLOCKED);
     fprintf(out, "</DIV>\n");
-    fprintf(out, "<DIV ID=\"commentsig\">\n");
+    fprintf(out, "<DIV CLASS=\"commentsig\">\n");
 
     if (email || website) {
 	if (website) {

@@ -255,7 +255,7 @@ main(int argc, char **argv)
     if (levels == 1) {
 	int mon;
 
-	for (mon=1; mon < 12; mon++) {
+	for (mon=0; mon < 12; mon++) {
 	    tm->tm_mon = mon;
 	    generate(tm, ".", full_rebuild, PG_ARCHIVE);
 	}
