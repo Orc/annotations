@@ -31,6 +31,10 @@ int buildpages(struct tm *, int);
 #define PG_ALL		(PG_HOME|PG_ARCHIVE|PG_POST|PG_ARTICLE|PG_SYNDICATE)
 
 int reindex(struct tm *, char *, int, int);
+
+#define INDEX_FULL	0x01
+#define INDEX_DAY	0x02
+
 void putindex(FILE*);
 
 char* makefile(char*, char*);

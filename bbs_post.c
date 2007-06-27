@@ -229,7 +229,6 @@ main(int argc, char **argv)
 
     comments_ok = 0;
     if ( editing = boolenv("WWW_edit") ) {
-	char *filetoedit;
 
 	if ( filetoedit = xgetenv("WWW_url")) {
 	    if ( (art = openart(filetoedit)) == 0)
@@ -283,11 +282,12 @@ main(int argc, char **argv)
 		printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%spost\">\n", bbsroot);
 		printf("<html><head><title>article %s</title></head>",
 			editing ? "updated" : "posted");
-		printf("<body><p>The article has been %s.  If your web browser"
+		printf("<body><p>The article has been %s.  If your web browser "
 				"does not take you to the correct page, "
 				"<a href=\"%s/post\">this is where you need to go</a></p></body>"
 				"</html>\n", editing ? "updated" : "posted",
 				bbsroot);
+		fflush(stdout);
 		exit(0);
 	    }
 	}

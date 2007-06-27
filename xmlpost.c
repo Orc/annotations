@@ -21,7 +21,9 @@ bbs_error(int code, char *why)
     int err = errno;
 
     if (code == 503)
-	syslog(LOG_ERR, "%m");
+	syslog(LOG_ERR, "%s %m", why);
+    else
+	syslog(LOG_ERR, "%s", why);
 
     printf("HTTP/1.0 %03d Oops\r\n"
 	   "Status: %03d/%s\r\n"
@@ -104,10 +106,10 @@ main(int argc, char **argv)
     scew_tree* tree = NULL;
     scew_parser* parser = NULL;
 
+    openlog("xmlpost", LOG_PID, LOG_NEWS);
+
     initialize();
     comments_ok = 0;
-
-    openlog("xmlpost", LOG_PID, LOG_NEWS);
 
     if ( (p = getenv("CONTENT_LENGTH")) == 0)
 	bbs_error(400, "bad call to xmlpost: CONTENT_LENGTH not set");

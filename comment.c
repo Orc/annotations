@@ -24,7 +24,7 @@ char *bbsroot  = "";
 int fillin      = 0;
 int printenv    = 0;
 int preview     = 0;
-int public      = 1;
+int publish_mail= 1;
 int help        = 0;
 char *text      = 0;
 char *script    = 0;
@@ -32,6 +32,16 @@ char *name      = 0;
 char *email     = 0;
 char *website   = 0;
 char *url       = 0;
+
+static void
+prefix(char *script)
+{
+    printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+	   "Connection: close\r\n"
+	   "Server: %s\r\n"
+	   "Cache-Control: no-cache\r\n"
+	   "\r\n", script);
+}
 
 
 void
@@ -41,11 +51,7 @@ bbs_error(int code, char *why)
 
     syslog(LOG_ERR, "%m");
 
-    printf("Content-Type: text/html; charset=iso-8859-1\r\n"
-	   "Connection: close\r\n"
-	   "Server: %s\r\n"
-	   "Cache-Control: no-cache\r\n"
-	   "\r\n", script);
+    prefix(script);
     puts("<HTML>\n"
 	 "<META NAME=\"ROBOTS\" CONTENT=\"NOINDEX,NOFOLLOW\">"
 	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
@@ -101,7 +107,7 @@ putbody(FILE *f)
 	       " VALUE=\"%s\">\n", email ? email : "");
     if (fillin && !email)
 	fprintf(f, " <font CLASS=alert>Please enter your email address</font>\n");
-    fprintf(f, "<INPUT TYPE=CHECKBOX NAME=public %s>&nbsp;publish your email address?\n", public  ? "CHECKED" : "");
+    fprintf(f, "<INPUT TYPE=CHECKBOX NAME=publish_mail %s>&nbsp;publish your email address?\n", publish_mail  ? "CHECKED" : "");
     fprintf(f, "<br><DIV align=left CLASS=\"URL\">Website "
 	       "<INPUT TYPE=TEXT NAME=\"website\" SIZE=40 MAXLENGTH=180"
 	       " VALUE=\"%s\">\n", website ? website : "");
@@ -152,7 +158,7 @@ putbody(FILE *f)
 
 int
 comment(char *from, char *email,
-        int public, char *website,
+        int publish_mail, char *website,
 	char *text, struct article *art)
 {
     struct comment *cmt;
@@ -162,13 +168,15 @@ comment(char *from, char *email,
     int buildflags = PG_ARCHIVE;
     char *ip;
     int yr,mn,dy,artno;
+    int approved = 0;
 
     if ( cmt = newcomment(art) )  {
 	cmt->author  = from;
 	cmt->email   = email;
-	cmt->public  = public;
+	cmt->publish_mail  = publish_mail;
 	cmt->website = website;
 	cmt->text    = text;
+	approved     = cmt->approved;
 	if ( !savecomment(cmt) )
 	    cmt = 0;
     }
@@ -196,7 +204,7 @@ comment(char *from, char *email,
 	generate(&tm, bbspath, 0, buildflags);
     }
 
-    return cmt->publish ? 1 : 2;
+    return approved ? 2 : 1;
 }
 
 
@@ -212,7 +220,7 @@ main(int argc, char **argv, char **envp)
     struct article *art;
 
     static char *item[] = { "WWW_text", "WWW_name", "WWW_email",
-                            "WWW_public", "WWW_website", "WWW_preview",
+                            "WWW_publish_mail", "WWW_website", "WWW_preview",
 			    "WWW_url", "WWW_help", 0 };
 
     openlog("comment", LOG_PID, LOG_NEWS);
@@ -230,7 +238,7 @@ main(int argc, char **argv, char **envp)
     email   = xgetenv("WWW_email");
     website = xgetenv("WWW_website");
 
-    public  = getenv("WWW_public") != 0;
+    publish_mail  = getenv("WWW_publish_mail") != 0;
     preview = getenv("WWW_preview") != 0;
     url     = getenv("WWW_url");
     if ( (p = getenv("WWW_help")) != 0 && strncasecmp(p, "Show", 4) == 0)
@@ -250,23 +258,15 @@ main(int argc, char **argv, char **envp)
     if (getenv("WWW_post")) {
 	if (text && name && (email||website) ) {
 
-	    switch ( comment(name,email,public,website,text,art) ) {
-	    case 1:
-		printf("Content-Type: text/html; charset=iso-8859-1\r\n"
-		       "Connection: close\r\n"
-		       "Server: %s\r\n"
-		       "Cache-Control: no-cache\r\n"
-		       "\r\n", script);
+	    switch ( comment(name,email,publish_mail,website,text,art) ) {
+	    case 2:
+		prefix(script);
 		puts("<html>");
 		printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s%s\">\n", bbsroot, url);
 		puts("</html>");
 		exit(0);
-	    case 2:
-		printf("Content-Type: text/html; charset=iso-8859-1\r\n"
-		       "Connection: close\r\n"
-		       "Server: %s\r\n"
-		       "Cache-Control: no-cache\r\n"
-		       "\r\n", script);
+	    case 1:
+		prefix(script);
 		printf("<html>\n"
 		       "<head>\n"
 		       "<title>your comment is being held by "
@@ -293,27 +293,17 @@ main(int argc, char **argv, char **envp)
 	/* complain about missing items */
     }
     else if (getenv("WWW_cancel")) {
-	printf("Content-Type: text/html; charset=iso-8859-1\r\n"
-	       "Connection: close\r\n"
-	       "Server: %s\r\n"
-	       "Cache-Control: no-cache\r\n"
-	       "\r\n", script);
+	prefix(script);
 	puts("<html>");
 	printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s%s\">\n", bbsroot,url);
 	puts("</html>");
 	exit(0);
     }
 
-
     if ( (themfile = alloca(strlen(bbspath) + 20)) == 0 )
 	bbs_error(503, "Out of memory!");
 
-    printf("Content-Type: text/html; charset=iso-8859-1\r\n"
-	   "Connection: close\r\n"
-	   "Server: %s\r\n"
-	   "Cache-Control: no-cache\r\n"
-	   "\r\n", script);
-
+    prefix(script);
     stash("_DOCUMENT", script);
     sprintf(themfile, "%s/post.theme", bbspath);
     process(themfile, putbody, 1, stdout);

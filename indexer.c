@@ -180,18 +180,28 @@ makefile(char *pathname, char *filepart)
 {
     char *ret = malloc(strlen(pathname)+strlen(filepart) + 2);
     char *p;
+    struct stat st;
+    int len;
 
     if (ret) {
 	strcpy(ret, pathname);
-	if (p = strrchr(ret, '/'))
-	    strcpy(p+1, filepart);
-	else {
+	len = strlen(ret);
+
+	if ( (len > 0)  && (ret[len-1] == '/') )
+	    ret[len-1] = 0;
+
+	if ( (stat(ret, &st) == 0) && (st.st_mode & S_IFDIR) ) {
 	    strcat(ret, "/");
 	    strcat(ret, filepart);
 	}
-	return ret;
+	else {
+	    if (p = strrchr(ret, '/'))
+		strcpy(p+1, filepart);
+	    else
+		strcpy(ret, filepart);
+	}
     }
-    return 0;
+    return ret;
 }
 
 
@@ -306,6 +316,7 @@ newart(struct article *art)
 	sprintf(end, "/%03d", seq);
 	if (mkdir(path, 0755) == 0) {
 	    strcat(path, "/");
+	    art->url     = makefile(path, "index.html");
 	    art->ctlfile = makefile(path, "message.ctl");
 	    art->msgfile = makefile(path, "message.txt");
 	    art->cmtfile = makefile(path, "comment.txt");
@@ -384,7 +395,7 @@ newcomment(struct article *art)
     int f;
 
     if ( tmp = calloc(sizeof tmp[0], 1) ) {
-	tmp->publish = !art->moderated;
+	tmp->approved = !art->moderated;
 	tmp->art = art;
 	time( &(tmp->when) );
 
@@ -459,10 +470,10 @@ opencomment(char *filename)
 		    ret->when = atol(p);
 		    break;
 	    case 'O':
-		    ret->publish = atoi(p);
+		    ret->approved = atoi(p);
 		    break;
 	    case 'P':
-		    ret->public = atoi(p);
+		    ret->publish_mail = atoi(p);
 		    break;
 	    case 'T':
 		    if ( ret->text = malloc(1+(end-p)) ) {
@@ -508,7 +519,7 @@ savecomment(struct comment *cmt)
 		   "O:%d\n"
 		   "P:%d\n"
 		   "D:%ld\n"
-		   "T:%s", cmt->author, cmt->publish, cmt->public,
+		   "T:%s", cmt->author, cmt->approved, cmt->publish_mail,
 			   cmt->when, cmt->text);
 	fclose(f);
 	status = 1;
@@ -637,6 +648,8 @@ puthtml(FILE *f)
     char *cf;
     char *p;
     int firstcomment = 1;
+    int cmax, i;
+    struct dirent **say;
 
     navbar(f, htmlart->url);
     subject(f, htmlart, 0);
@@ -663,44 +676,40 @@ puthtml(FILE *f)
 	}
 	cf = alloca(strlen(htmlart->cmtdir) + 60);
 
-	if ( cd = opendir(htmlart->cmtdir)) {
-	    while (ce = readdir(cd)) {
-		if (isdigit(ce->d_name[0])) {
-		    sprintf(cf, "%s/%s", htmlart->cmtdir, ce->d_name);
-		    if ( c = opencomment(cf) ) {
-			if (c->publish) {
-			    fprintf(f, "<DIV CLASS=\"comment\">\n");
+	cmax = scandir(htmlart->cmtdir, &say, dirent_is_good, dirent_nsort);
+	for (i=0; i < cmax; i++) {
+	    sprintf(cf, "%s/%s", htmlart->cmtdir, say[i]->d_name);
+	    if ( c = opencomment(cf) ) {
+		if (c->approved) {
+		    fprintf(f, "<DIV CLASS=\"comment\">\n");
 
-			    if (firstcomment)
-				firstcomment = 0;
-			    else
-				fputs(fmt.commentsep, f);
+		    if (firstcomment)
+			firstcomment = 0;
+		    else
+			fputs(fmt.commentsep, f);
 
-			    format(f, c->text, FM_BLOCKED);
-			    fprintf(f, "</DIV>\n");
-			    fprintf(f, "<DIV CLASS=\"commentsig\">\n");
+		    format(f, c->text, FM_BLOCKED);
+		    fprintf(f, "</DIV>\n");
+		    fprintf(f, "<DIV CLASS=\"commentsig\">\n");
 
-			    if (c->website) {
-				if (!strncasecmp(c->website, "http://", 7))
-				    fprintf(f, "<a href=\"%s\">%s</a>\n",
-						c->website, c->author);
-				else
-				    fprintf(f, "<a href=\"http://%s\">%s</a>\n",
-						c->website, c->author);
-			    }
-			    else if (c->email && c->public)
-				fprintf(f, "<a href=\"mailto:%s\">%s</a>\n",
-						c->email, c->author);
-			    else
-				fprintf(f, "%s ", c->author);
-			    fputs(ctime( &(c->when) ), f);
-			    fprintf(f, "</DIV>\n");
-			}
-			freecomment(c);
+		    if (c->website) {
+			if (!strncasecmp(c->website, "http://", 7))
+			    fprintf(f, "<a href=\"%s\">%s</a>\n",
+					c->website, c->author);
+			else
+			    fprintf(f, "<a href=\"http://%s\">%s</a>\n",
+					c->website, c->author);
 		    }
+		    else if (c->email && c->publish_mail)
+			fprintf(f, "<a href=\"mailto:%s\">%s</a>\n",
+					c->email, c->author);
+		    else
+			fprintf(f, "%s ", c->author);
+		    fputs(ctime( &(c->when) ), f);
+		    fprintf(f, "</DIV>\n");
 		}
+		freecomment(c);
 	    }
-	    closedir(cd);
 	}
     }
     if (htmlart->comments_ok) {
@@ -762,7 +771,7 @@ writehtml(struct article *art)
 
 
 int
-reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
+reindex(struct tm *tm, char *bbspath, int flags, int nrposts)
 {
     char b1[20], b2[20];
 
@@ -777,12 +786,14 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
     int even = 0;
     int more  = 0;
     int total = 0;
+    int reindexme;
     int i;
     int c;
     int j, k;
     int verbose = fetch("_VERBOSE") != 0;
     char *webroot = fetch("_ROOT");
     char *q;
+
 
     m = *tm;
 
@@ -802,7 +813,11 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 	    if ((emax=scandir(dydir, &each, dirent_is_good, dirent_nsort)) < 1)
 		continue;
 
-	    strftime(b1, sizeof b1, "@ %b %%s, %Y", &m);
+	    if ( (flags & INDEX_DAY) && (atoi(days[j]->d_name) != tm->tm_mday) )
+		strftime(b1, sizeof b1, "! %b %%s %Y", &m);
+	    else
+		strftime(b1, sizeof b1, "@ %b %%s, %Y", &m);
+
 	    sprintf(b2, b1, days[j]->d_name);
 	    files[count++] = strdup(b2);
 
@@ -841,18 +856,21 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
     if (iFb) fclose(iFb);
     iFb = tmpfile();
 
-    for (j = i = 0; i < count; i++) {
-	if (files[i][0] == '@') {
+    for (reindexme = j = i = 0; i < count; i++) {
+
+	if (files[i][0] == '@' || files[i][0] == '!') {
 	    fprintf(iFb, "%s%s%s\n", fmt.chapter.start, 1+(files[i]),
 				     fmt.chapter.end);
+	    reindexme = (files[i][0] == '@');
 	    j=0;
 	}
 	else {
 	    struct article *art;
 
+
 	    if (art = openart(files[i])) {
 
-		if (full_rebuild) {
+		if (reindexme /* || (flags & INDEX_FULL)*/ ) {
 		    writehtml(art);
 		    if (verbose)
 			printf("H %s\n", files[i]);
@@ -910,6 +928,7 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 	    else
 		perror(files[i]);
 	}
+
 	free(files[i]);
     }
 done:

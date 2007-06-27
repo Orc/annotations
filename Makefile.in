@@ -45,7 +45,7 @@ clean:
 	rm -f *.o $(PGMS)
 
 distclean spotless: clean
-	rm -f readconfig.* @CONFIGURE_FILES@ @GENERATED_FILES@
+	rm -f @CONFIGURE_FILES@ @GENERATED_FILES@
 
 uncgi.o : uncgi/uncgi.c
 	$(CC) -c -o uncgi.o -DLIBRARY=1 uncgi/uncgi.c

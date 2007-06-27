@@ -142,7 +142,7 @@ main(int argc, char **argv)
     int buildarchivepage = 0;
     int buildhomepage = 0;
     int buildsyndicate = 0;
-    int full_rebuild = 0;
+    int flags = 0;
     register opt;
     struct passwd *pw;
 
@@ -154,7 +154,7 @@ main(int argc, char **argv)
 	switch (opt) {
 	case 'v':   stash("_VERBOSE", "T");
 		    break;
-	case 'f':   full_rebuild = 1;
+	case 'f':   flags = INDEX_FULL;
 		    break;
 	case 'a':   buildarchivepage = 1;
 		    buildhomepage = 1;
@@ -211,6 +211,11 @@ main(int argc, char **argv)
 
 	if (levels >= 2)
 	    buildhomepage = buildhomepage && (today->tm_mon == tm->tm_mon);
+
+	if (levels == 3)
+	    flags |= INDEX_DAY;
+
+	buildarchivepage = 1;
     }
     else {
 	buildhomepage = 1;
@@ -227,11 +232,11 @@ main(int argc, char **argv)
 
 	for (mon=0; mon < 12; mon++) {
 	    tm->tm_mon = mon;
-	    generate(tm, ".", full_rebuild, PG_ARCHIVE);
+	    generate(tm, ".", flags, PG_ARCHIVE);
 	}
     }
     else {
-	generate(tm, ".", full_rebuild, PG_ARCHIVE);
+	generate(tm, ".", flags, PG_ARCHIVE);
     }
     pagetime = *localtime(&now);
 

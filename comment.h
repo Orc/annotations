@@ -12,8 +12,8 @@ struct comment {
     char  *website;
     char  *text;
     time_t when;
-    int    publish;	/* publish this comment */
-    int    public;	/* publish the email address? */
+    int    approved;		/* approved for publication? */
+    int    publish_mail;	/* publish the email address? */
 };
 
 struct comment *newcomment(struct article *);

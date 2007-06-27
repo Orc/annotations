@@ -45,11 +45,10 @@ post(struct article *art, char *bbspath, int cooked)
     FILE *f;
 
 
-    if ( chdir(bbspath) != 0 || newart(art) == 0) return 0;
+    if ( chdir(bbspath) != 0 || newart(art) == 0 || art->url == 0) return 0;
 
     tm = *localtime(&art->timeofday);
     art->modified = art->timeofday;
-    art->url = makefile(art->ctlfile, "index.html");
 
     if (f = fopen("index.db", "a")) {
 	flock(fileno(f), LOCK_EX);
