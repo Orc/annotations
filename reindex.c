@@ -74,7 +74,7 @@ archivepage()
     FILE *f;
     int verbose = fetch("_VERBOSE") != 0;
 
-    if ( (f = fopen("archive.html", "w")) == 0) {
+    if ( (f = rewrite("archive.html")) == 0) {
 	perror("archive.html");
 	exit(1);
     }
@@ -106,7 +106,7 @@ archivepage()
 	if (count > 0)
 	    fprintf(f, "</ul>\n");
     }
-    fclose(f);
+    rclose(f);
 }
 
 

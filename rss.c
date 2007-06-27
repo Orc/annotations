@@ -20,7 +20,7 @@ extern int dirent_is_good(struct dirent *e);
  */
 #define EX_HTML		0x01	/* allow html */
 #define EX_ENTITY	0x02	/* allow character entities */
-#define CLIPPING	200
+#define CLIPPING	20000
 #define MORE		1000
 
 char *

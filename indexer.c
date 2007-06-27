@@ -497,7 +497,7 @@ writehtml(struct article *art)
     FILE *f;
     char *url, *root;
 
-    if ( art && art->url && (f = fopen(art->url, "w")) ) {
+    if ( art && art->url && (f = rewrite(art->url)) ) {
 	flock(fileno(f), LOCK_EX);
 	htmlart = art;
 
@@ -513,7 +513,7 @@ writehtml(struct article *art)
 	fflush(f);
 	ftruncate(fileno(f), ftell(f));
 	flock(fileno(f), LOCK_UN);
-	fclose(f);
+	rclose(f);
     }
     htmlart = 0;
 }
@@ -682,29 +682,29 @@ buildpages(struct tm *tm, int which)
 	strftime(archive_for, sizeof archive_for, "Archive for %b %Y", tm);
 
 	/* set stdout to -> YYYY/MM/index.html */
-	if ( f = fopen(post, "w") ) {
+	if ( f = rewrite(post) ) {
 	    sprintf(archive, "%s%s",bbsroot, post);
 	    stash("_DOCUMENT", archive);
 	    stash("_CONTEXT", "archive");
 	    stash("title", archive_for);
 	    process("page.theme", putindex, 1, f);
-	    fclose(f);
+	    rclose(f);
 	}
     }
     else if (which & PG_HOME) {
 	/* set stdout to -> {HomePage} */
-	if ( f = fopen(fmt.homepage, "w") ) {
+	if ( f = rewrite(fmt.homepage) ) {
 	    sprintf(archive, "%s%s", bbsroot, fmt.homepage);
 	    stash("_DOCUMENT", archive);
 	    stash("_CONTEXT", "home");
 	    stash("title", fmt.name);
 	    process("page.theme", putindex, 1, f);
-	    fclose(f);
+	    rclose(f);
 	}
     }
     else if (which & PG_POST) {
 	/* set stdout to -> post/index.html */
-	if ( f = fopen("post/index.html", "w") ) {
+	if ( f = rewrite("post/index.html") ) {
 	    sprintf(archive, "%spost/index.html", bbsroot);
 	    stash("_DOCUMENT", archive);
 	    stash("_CONTEXT", "post");
@@ -713,7 +713,7 @@ buildpages(struct tm *tm, int which)
 		process("post/page.theme", putindex, 1, f);
 	    else
 		process("page.theme", putindex, 1, f);
-	    fclose(f);
+	    rclose(f);
 	}
     }
     return 1;

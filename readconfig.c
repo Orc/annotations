@@ -36,6 +36,7 @@ static struct _keys {
 } keys[] = {
     IT("Name", SINGLE, name),
     IT("HomePage", SINGLE, homepage),
+    IT("Filter", SINGLE, filter),
     IT("URL", SINGLE, url),
     IT("Author",SINGLE, author),
     IT("About", SINGLE, about),
@@ -69,6 +70,7 @@ readconfig(char *path)
     memset(&fmt, 0, sizeof fmt);
     fmt.name          = "";
     fmt.homepage      = "index.html";
+    fmt.filter        = 0;
     fmt.chapter.start = "<H2 CLASS=chapter>";
     fmt.chapter.end   = "</H2>";
     fmt.article.start = "<div CLASS=article>";

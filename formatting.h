@@ -11,6 +11,7 @@ struct markup {
 struct fmt {
     char *name;			/* name of the weblog */
     char *homepage;		/* what page it lives at */
+    char *filter;		/* postprocessing filter */
     char *url;			/* url for the weblog */
     char *author;		/* author for the weblog */
     char *about;		/* one line description of the weblog */

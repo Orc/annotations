@@ -1,11 +1,11 @@
 CC=@CC@
 LIBS=@LIBS@
 
-THEME=theme.o
+COMMON=theme.o rewrite.o
 
-POST_OBJS=format.o post.o bbs_post.o mapfile.o indexer.o rss.o readconfig.o $(THEME)
-REINDEX_OBJS=format.o mapfile.o readconfig.o indexer.o reindex.o rss.o $(THEME)
-COMMENT_OBJS=comment.o format.o mapfile.o readconfig.o indexer.o rss.o post.o $(THEME)
+POST_OBJS=format.o post.o bbs_post.o mapfile.o indexer.o rss.o readconfig.o $(COMMON)
+REINDEX_OBJS=format.o mapfile.o readconfig.o indexer.o reindex.o rss.o $(COMMON)
+COMMENT_OBJS=comment.o format.o mapfile.o readconfig.o indexer.o rss.o post.o $(COMMON)
 PGMS=post reindex comment
 
 all: $(PGMS)
@@ -40,3 +40,4 @@ mapfile.o: mapfile.c mapfile.h
 post.o: post.c indexer.h formatting.h mapfile.h
 reindex.o: reindex.c config.h formatting.h mapfile.h indexer.h
 theme.o: theme.c config.h
+rewrite.o: rewrite.c config.h formatting.h
