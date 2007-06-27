@@ -681,7 +681,7 @@ puthtml(FILE *f)
 	    sprintf(cf, "%s/%s", htmlart->cmtdir, say[i]->d_name);
 	    if ( c = opencomment(cf) ) {
 		if (c->approved) {
-		    fprintf(f, "<DIV CLASS=\"comment\">\n");
+		    fprintf(f, "<A NAME=%d>\n</A><DIV CLASS=\"comment\">\n", i);
 
 		    if (firstcomment)
 			firstcomment = 0;
