@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <errno.h>
 
 #include "indexer.h"
 #include "formatting.h"
@@ -46,6 +47,7 @@ struct passwd *user;
 int   didpara  = 0;
 int   printenv = 0;
 char *author   = 0;
+char *category = 0;
 char *bbspath  = "";
 char *bbsroot  = "";
 char *username = 0;
@@ -58,11 +60,37 @@ int   comments_ok = 0;
 
 extern char *xgetenv(char*);
 
+
 static int
 boolenv(char *s)
 {
     return getenv(s) != 0;
 }
+
+
+static void
+showvalue(char *text, FILE *f)
+{
+    if (text) {
+	fprintf(f, " VALUE=\"");
+	for ( ;*text; ++text) {
+	    switch (*text) {
+	    case '&':
+		fprintf(f, "&amp;");
+		break;
+	    case '"':
+		fprintf(f, "&quot;");
+		break;
+	    default:
+		fputc(*text, f);
+		break;
+	    }
+	}
+	fputc('"', f);
+    }
+    fputs(">\n", f);
+}
+
 
 static void
 putbody(FILE *f)
@@ -83,24 +111,8 @@ putbody(FILE *f)
 
     fprintf(f, "<FORM METHOD=POST ACTION=\"%s\">\n", script);
     fputs("<DIV align=left CLASS=\"subjectbox\">Subject <INPUT TYPE=TEXT NAME=\"title\" SIZE=80 MAXLENGTH=180", f);
-    if (art->title) {
-	fprintf(f, " VALUE=\"");
-	for (t = art->title; *t; ++t) {
-	    switch (*t) {
-	    case '&':
-		fprintf(f, "&amp;");
-		break;
-	    case '"':
-		fprintf(f, "&quot;");
-		break;
-	    default:
-		fputc(*t, f);
-		break;
-	    }
-	}
-	fputc('"', f);
-    }
-    fputs(">\n", f);
+    showvalue(art->title, f);
+
     if (complain && !art->title)
 	fputs("<font class=\"alert\">Please enter a subject</font>\n", f);
     fputs("<BR></DIV>\n", f);
@@ -123,6 +135,9 @@ putbody(FILE *f)
     if (complain && !art->body)
 	fputs("<BR><font class=\"alert\">Please enter a message</font>\n", f);
     fputs("</DIV>\n", f);
+
+    fputs("<DIV CLASS=\"tags\">Category <INPUT TYPE=TEXT NAME=\"category\" SIZE=80 MAXLENGTH=180", f);
+    showvalue(art->category, f);
 
     fputs("<DIV ALIGN=LEFT CLASS=\"checkbox\">\n"
 	  "Allow&nbsp;comments"
@@ -201,6 +216,7 @@ main(int argc, char **argv)
 
     preview = boolenv("WWW_previewing") | boolenv("WWW_preview");
     title = xgetenv("WWW_title");
+    category = xgetenv("WWW_category");
 
     comments_ok = 0;
     if ( editing = boolenv("WWW_edit") ) {
@@ -231,6 +247,7 @@ main(int argc, char **argv)
 	art->body = text;
 	art->size = text ? strlen(text) : 0;
 
+	art->category = category;
 	art->author = author;
 	art->title = title;
 	art->url = xgetenv("WWW_url");

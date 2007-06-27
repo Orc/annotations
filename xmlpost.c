@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <errno.h>
 
 #include <scew/scew.h>
 
@@ -51,7 +52,13 @@ int   comments_ok = 0;
 
 /*
  * pick apart the handy scew/expat data structure; all
- * we care about are the title & content entries.
+ * we care about are the title, content, and comment
+ * entries.  There are some wonderful potentials for
+ * namespace collisions, because we don't care about
+ * just where the items show up, and given the extreme
+ * mutability of all-things-web, it's more than possible
+ * that someone will want to use <comment></comment> for
+ * something completely different.
  */
 static int
 dexml(scew_element *p)
@@ -68,6 +75,11 @@ dexml(scew_element *p)
 	title = scew_element_contents(p);
     else if (strcasecmp(item, "content") == 0)
 	text = scew_element_contents(p);
+    else if (strcasecmp(item, "comments") == 0) {
+	char *val = scew_element_contents(p);
+	if ( (strcasecmp(val, "on") == 0) || (strcasecmp(val, "yes") == 0) )
+	    comments_ok = 1;
+    }
 
     for (idx=0; idx = scew_element_next(p, idx); ) {
 	rc = dexml(idx);
@@ -93,6 +105,7 @@ main(int argc, char **argv)
     scew_parser* parser = NULL;
 
     initialize();
+    comments_ok = 0;
 
     openlog("xmlpost", LOG_PID, LOG_NEWS);
 
@@ -137,8 +150,6 @@ main(int argc, char **argv)
     if (dexml(scew_tree_root(scew_parser_tree(parser))) != 0)
 	bbs_error(400, "malformed xml document");
 
-
-    comments_ok = 0;
 
     memset(&art, 0, sizeof art);
 

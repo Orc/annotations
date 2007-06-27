@@ -38,9 +38,9 @@ yselect(const struct dirent *e)
 {
     int i;
 
-    if (e->d_namlen < 1)
+    if (e->d_reclen < 1 || e->d_name[0] == 0)
 	return 0;
-    for (i=0; i < e->d_namlen; i++)
+    for (i=0; (i < e->d_reclen) && e->d_name[i]; i++)
 	if (!isdigit(e->d_name[i]))
 	    return 0;
     return 1;
@@ -135,7 +135,7 @@ main(int argc, char **argv)
 
 
     opterr = 1;
-    while ( (opt=getopt(argc, argv, "afv")) != EOF )
+    while ( (opt=getopt(argc, argv, "asfv")) != EOF )
 	switch (opt) {
 	case 'v':   stash("_VERBOSE", "T");
 		    break;
@@ -143,7 +143,8 @@ main(int argc, char **argv)
 		    break;
 	case 'a':   buildarchivepage = 1;
 		    buildhomepage = 1;
-		    buildsyndicate = 1;
+		    break;
+	case 's':   buildsyndicate = 1;
 		    break;
 	default:    exit(1);
 	}
@@ -215,8 +216,7 @@ main(int argc, char **argv)
     if (buildhomepage)
 	generate(&pagetime, ".", 1, PG_HOME|PG_POST);
 
-
-    if (buildsyndicate) {
+    if (buildhomepage || buildsyndicate) {
 	syndicate(&pagetime, bbsroot, &rss2feed);
 	syndicate(&pagetime, bbsroot, &atomfeed);
     }

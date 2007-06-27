@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "formatting.h"
 #include "indexer.h"
@@ -257,6 +258,9 @@ openart(char *filename)
 	    case 'B':	/* B)ig Brother is watching you */
 		    ret->moderated = atoi(p);
 		    break;
+	    case 'X':	/* X)ref header (categories) */
+		    ret->category = restofline(p, eol);
+		    break;
 	    default:
 		    break;
 	    }
@@ -354,6 +358,8 @@ writectl(struct article *art)
 	fprintf(f, "W:%ld\n", art->timeofday);
 	fprintf(f, "M:%ld\n", art->modified ? art->modified : art->timeofday);
 	fprintf(f, "T:%s\n",art->title);
+	if (art->category && art->category[0])
+	    fprintf(f, "X:%s\n", art->category);
 	fprintf(f, "U:%s\n", art->url);
 	fprintf(f, "F:%d\n", art->comments);
 	fprintf(f, "C:%d\n", art->comments_ok);

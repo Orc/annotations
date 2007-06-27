@@ -9,6 +9,7 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <errno.h>
 
 #include "indexer.h"
 #include "formatting.h"

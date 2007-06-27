@@ -14,6 +14,7 @@ struct article {
     time_t timeofday;
     time_t modified;
     char  *title;
+    char  *category;
     char  *url;
     char  *preview;
     int    comments;	/* how many comments */

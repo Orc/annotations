@@ -137,8 +137,11 @@ rss2post(FILE *f, struct article *art)
     char *q;
     int print = 1;
     int size;
+    time_t *timep;
 
-    strftime(tod, 80, "%a, %d %b %Y %H:%M:%S %Z", localtime(&(art->timeofday)));
+    timep = (art->modified != art->timeofday) ? &(art->modified)
+					      : &(art->timeofday);
+    strftime(tod, 80, "%a, %d %b %Y %H:%M:%S %Z", localtime(timep));
 
     fprintf(f, "\n"
 	       "  <item>\n"
