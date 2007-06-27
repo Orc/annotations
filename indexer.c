@@ -24,9 +24,9 @@ extern char *eoln(char*,char*);
  * rebuild $bbsroot/${HomePage}		{ all articles this month }
  *         $bbsroot/YYYY/MM/index.html	{ ditto }
  */
-static char art[25];	/* YYYY/MM/DD/###/message.{txt|inf} */
-static char dydir[25];	/* YYYY/MM/DD/### */
-static char mo[25];	/* YYYY/MM/index.html */
+static char art[40];	/* YYYY/MM/DD/###/message.{txt|inf} */
+static char dydir[40];	/* YYYY/MM/DD/### */
+static char mo[40];	/* YYYY/MM/index.html */
 
 int
 dirent_is_good(struct dirent *e)
@@ -776,18 +776,20 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 
     m = *tm;
 
-    strftime(mo, sizeof mo, "%Y/%m", &m);
 
     files = malloc(sizeof *files * (nrfiles = 1000));
     count=0;
 
     do {
+	strftime(mo, sizeof mo, "%Y/%m", &m);
+
 	dmax = scandir(mo, &days, dirent_is_good, dirent_nsort);
 
 	for (j=dmax; j-- > 0; ) {
 
 	    sprintf(dydir, "%s/%s", mo, days[j]->d_name);
-	    if ( (emax=scandir(dydir, &each, dirent_is_good, dirent_nsort)) < 1)
+
+	    if ((emax=scandir(dydir, &each, dirent_is_good, dirent_nsort)) < 1)
 		continue;
 
 	    strftime(b1, sizeof b1, "@ %b %%s, %Y", &m);
@@ -809,6 +811,9 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 		/*free(*ap);*/
 	    }
 	    /*free(*dp);*/
+
+	    if (nrposts && (more > nrposts))
+		break;
 	}
 
 	if (--m.tm_mon < 0) {
@@ -821,8 +826,6 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 	 */
 	if (m.tm_year < 100)
 	    break;
-
-	strftime(mo, sizeof mo, "%Y/%m", &m);
     } while (more < nrposts);
 
     if (iFb) fclose(iFb);
@@ -891,7 +894,7 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 		even = !even;
 		freeart(art);
 
-		if ( nrposts && !--nrposts )
+		if ( nrposts && !--total )
 		    break;
 	    }
 	    else

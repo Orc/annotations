@@ -18,7 +18,10 @@ bbs_error(int code, char *why)
 {
     int err = errno;
 
-    syslog(LOG_ERR, "%m");
+    if (code/100 == 5)
+	syslog(LOG_ERR, "%m");
+    else
+	syslog(LOG_ERR, "%d: %s", code, why);
 
     printf("HTTP/1.0 %03d %s\r\n", code, why);
     puts("content-type: text/html\r\n"
@@ -27,7 +30,7 @@ bbs_error(int code, char *why)
 	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
 	 "<BODY BGCOLOR=black>\n"
          "<CENTER><FONT COLOR=RED>OH, NO!<BR>");
-    if (code == 503)
+    if (code/100 == 5)
 	puts(strerror(err));
     else
 	puts(why);
@@ -209,7 +212,7 @@ main(int argc, char **argv)
     script = xgetenv("SCRIPT_NAME");
 
     if ( (author = xgetenv("REMOTE_USER")) == 0)
-	bbs_error(500, "I don't know who you are!");
+	bbs_error(401, "I don't know who you are!");
 
     if ( (text = xgetenv("WWW_text")) && (*text == 0) )
 	text = 0;

@@ -97,19 +97,18 @@ fi
 rm -f uid
 
 if AC_LIBRARY uncgi -luncgi; then
-    AC_CONFIG CGIDIR  "$AC_CGIDIR"
-    AC_CONFIG WWWDIR  "$AC_WWWDIR"
-    AC_CONFIG USERDIR "$AC_USERDIR"
-
-    LOG "WWW directory : $AC_WWWDIR"
-    LOG "CGI directory : $AC_CGIDIR"
-    LOG "user directory: $AC_USERDIR"
+    AC_SUB UNCGI ""
 else
-    LOG "Cannot find libuncgi;  you need to have a copy of Steven Grimm's"
-    LOG "uncgi program compiled as a library for $TARGET to work"
-    LOG "You can get uncgi from http://www.midwinter.com/~koreth/uncgi.html"
-    AC_FAIL "Sorry!"
+    AC_SUB UNCGI uncgi.o
 fi
+
+AC_CONFIG CGIDIR  "$AC_CGIDIR"
+AC_CONFIG WWWDIR  "$AC_WWWDIR"
+AC_CONFIG USERDIR "$AC_USERDIR"
+
+LOG "WWW directory : $AC_WWWDIR"
+LOG "CGI directory : $AC_CGIDIR"
+LOG "user directory: $AC_USERDIR"
 
 if AC_LIBRARY scew_parser_create '-lscew -lexpat'; then
     LOG "scew and expat found; building xmlpost"

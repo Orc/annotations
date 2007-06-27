@@ -157,6 +157,8 @@ main(int argc, char **argv)
 	 * (offer only valid for root)
 	 */
 	if ( pw = getpwnam(argv[0]) ) {
+	    ++argv;
+	    --argc;
 	    setgid(pw->pw_gid);
 	    setegid(pw->pw_gid);
 	    setuid(pw->pw_uid);
@@ -174,11 +176,11 @@ main(int argc, char **argv)
     if (buildarchivepage)
 	archivepage();
 
-    if (argc > 1) {
+    if (argc > 0) {
 	struct tm x;
 
 	tm = &x;
-	levels = sscanf(argv[1], "%d/%d/%d", &x.tm_year, &x.tm_mon, &x.tm_mday);
+	levels = sscanf(argv[0], "%d/%d/%d", &x.tm_year, &x.tm_mon, &x.tm_mday);
 
 	if (levels < 1) {
 	    fprintf(stderr, "usage: %s year[/mon[/day]]\n", pgm);

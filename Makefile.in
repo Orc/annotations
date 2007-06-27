@@ -1,7 +1,7 @@
 CC=@CC@
 LIBS=@LIBS@
 
-COMMON=theme.o rewrite.o initialize.o xgetenv.o
+COMMON=theme.o rewrite.o initialize.o xgetenv.o @UNCGI@
 
 POST_OBJS=format.o post.o mapfile.o indexer.o rss.o readconfig.o $(COMMON)
 REINDEX_OBJS=format.o mapfile.o readconfig.o indexer.o reindex.o rss.o $(COMMON)
@@ -46,6 +46,9 @@ clean:
 
 distclean spotless: clean
 	rm -f readconfig.* @CONFIGURE_FILES@ @GENERATED_FILES@
+
+uncgi.o : uncgi/uncgi.c
+	$(CC) -c -o uncgi.o -DLIBRARY=1 uncgi/uncgi.c
 
 bbs_post.o: bbs_post.c config.h indexer.h formatting.h
 comment.o: comment.c config.h indexer.h formatting.h

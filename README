@@ -18,7 +18,6 @@ REQUIREMENTS
     2)	A C compiler
     3)  A web server that supports Basic authentication and
         cgi scripts (I use a lightly hacked version of thttpd)
-
     4)  If you wish to publish articles via xml (using the Atom
 	publishing format, which is the _only_ format I found
 	documented), you need to install the expat and scew
@@ -27,5 +26,8 @@ REQUIREMENTS
 Annotations is free software;  it is released under a BSD-style license
 that allows you to do as you wish with it as long as you don't attempt
 to claim it as your own work.
+
+I include a copy of Steven Koresh's uncgi program, which is also released
+under a BSD-style license.  (look at uncgi/uncgi.c for the details)
 
 The file INSTALL describes how to build and install postoffice

@@ -84,7 +84,7 @@ format(FILE *f, char *text, int flags)
 		bold |= 1;
 	    }
 	    else
-		putchar(*p);
+		fputc(*p, f);
 	}
 	else if (*p == '_') {
 	    if ( (bold & 2) && !isspace(p[-1]) ) {
