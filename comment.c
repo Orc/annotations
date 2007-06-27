@@ -258,7 +258,7 @@ main(int argc, char **argv, char **envp)
 		       "Cache-Control: no-cache\r\n"
 		       "\r\n", script);
 		puts("<html>");
-		printf("<meta http-equiv=\"Refresh\" Content=0; URL=%s/%s/\">\n", bbsroot, url);
+		printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s%s\">\n", bbsroot, url);
 		puts("</html>");
 		exit(0);
 	    case 2:
@@ -271,7 +271,7 @@ main(int argc, char **argv, char **envp)
 		       "<head>\n"
 		       "<title>your comment is being held by "
 		              "the moderator</title>\n"
-		       "<meta http-equiv=refresh content=\"5; URL=%s/%s\">\n"
+		       "<meta http-equiv=refresh content=\"5; URL=%s%s\">\n"
 		       "</head>\n", bbsroot, url);
 		printf("<body>\n"
 		       "<p>Your comment is being held for moderation, "
@@ -299,7 +299,7 @@ main(int argc, char **argv, char **envp)
 	       "Cache-Control: no-cache\r\n"
 	       "\r\n", script);
 	puts("<html>");
-	printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s/\">\n", bbsroot);
+	printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s%s\">\n", bbsroot,url);
 	puts("</html>");
 	exit(0);
     }

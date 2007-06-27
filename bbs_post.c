@@ -280,7 +280,7 @@ main(int argc, char **argv)
 		       "Cache-Control: no-cache\r\n"
 		       "\r\n", script);
 		puts("<html>");
-		printf("<meta http-equiv=\"Refresh\" Content=1; URL=%s/post/\">\n", bbsroot);
+		printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%spost\">\n", bbsroot);
 		printf("<html><head><title>article %s</title></head>",
 			editing ? "updated" : "posted");
 		printf("<body><p>The article has been %s.  If your web browser"
@@ -300,7 +300,7 @@ main(int argc, char **argv)
 	       "Cache-Control: no-cache\r\n"
 	       "\r\n", script);
 	puts("<html>");
-	printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s/post/\">\n", bbsroot);
+	printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%spost\">\n", bbsroot);
 	printf("<head><title>%s cancelled</title></head>",
 		editing ? "edit" : "post");
 	printf("<body><p>%s cancelled.  If your web browser\n"
