@@ -13,32 +13,6 @@
 #include "indexer.h"
 #include "formatting.h"
 
-void
-bbs_error(int code, char *why)
-{
-    int err = errno;
-
-    if (code/100 == 5)
-	syslog(LOG_ERR, "%m");
-    else
-	syslog(LOG_ERR, "%d: %s", code, why);
-
-    puts("<HTML>\n"
-	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
-	 "<BODY BGCOLOR=black>\n"
-         "<CENTER><FONT COLOR=RED>OH, NO!<BR>");
-    printf("ERROR CODE %s<BR>\n", code);
-    if (code/100 == 5)
-	puts(strerror(err));
-    else
-	puts(why);
-    puts("</FONT></CENTER>\n"
-         "</BODY></HTML>");
-    exit(1);
-}
-
-
-char *text, *title;
 static struct article *art;
 int help;
 char *p, *q;
@@ -52,7 +26,7 @@ char *category = 0;
 char *bbspath  = "";
 char *bbsroot  = "";
 char *username = 0;
-char *script   = 0;
+char *script   = "dunno";
 char *filename = 0;
 int   editing  = 0;
 int   preview  = 0;
@@ -91,6 +65,40 @@ showvalue(char *text, FILE *f)
     }
     fputs(">\n", f);
 }
+
+
+void
+bbs_error(int code, char *why)
+{
+    int err = errno;
+
+    if (code/100 == 5)
+	syslog(LOG_ERR, "%m");
+    else
+	syslog(LOG_ERR, "%d: %s", code, why);
+
+    printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+	   "Connection: close\r\n"
+	   "Server: %s\r\n"
+	   "Cache-Control: no-cache\r\n"
+	   "\r\n", script);
+
+    puts("<HTML>\n"
+	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
+	 "<BODY BGCOLOR=black>\n"
+         "<CENTER><FONT COLOR=RED>OH, NO!<BR>");
+    printf("ERROR CODE %s<BR>\n", code);
+    if (code/100 == 5)
+	puts(strerror(err));
+    else
+	puts(why);
+    puts("</FONT></CENTER>\n"
+         "</BODY></HTML>");
+    exit(1);
+}
+
+
+char *text, *title;
 
 
 static void
@@ -265,9 +273,12 @@ main(int argc, char **argv)
 	    else
 		res = post(art, bbspath, 0);
 
-	    syslog(LOG_INFO, "res (%s) is %d", editing?"edit":"post", res);
-
 	    if (res) {
+		printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+		       "Connection: close\r\n"
+		       "Server: %s\r\n"
+		       "Cache-Control: no-cache\r\n"
+		       "\r\n", script);
 		puts("<html>");
 		printf("<meta http-equiv=\"Refresh\" Content=1; URL=%s/post/\">\n", bbsroot);
 		printf("<html><head><title>article %s</title></head>",
@@ -283,6 +294,11 @@ main(int argc, char **argv)
 	complain = (strcmp(p, "New Message") != 0);
     }
     else if (xgetenv("WWW_cancel")) {
+	printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+	       "Connection: close\r\n"
+	       "Server: %s\r\n"
+	       "Cache-Control: no-cache\r\n"
+	       "\r\n", script);
 	puts("<html>");
 	printf("<meta http-equiv=\"Refresh\" Content=1; URL=%s/post/\">\n", bbsroot);
 	printf("<head><title>%s cancelled</title></head>",
@@ -300,6 +316,11 @@ main(int argc, char **argv)
     if ( (themfile = alloca(strlen(bbspath) + 20)) == 0 )
 	bbs_error(503, "Out of memory!");
 
+    printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+	   "Connection: close\r\n"
+	   "Server: %s\r\n"
+	   "Cache-Control: no-cache\r\n"
+	   "\r\n", script);
 
     stash("_DOCUMENT", script);
     stash("_USER", author);

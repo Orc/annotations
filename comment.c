@@ -17,29 +17,6 @@
 
 extern char *xgetenv();
 
-void
-bbs_error(int code, char *why)
-{
-    int err = errno;
-
-    syslog(LOG_ERR, "%m");
-
-    puts("<HTML>\n"
-	 "<META NAME=\"ROBOTS\" CONTENT=\"NOINDEX,NOFOLLOW\">"
-	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
-	 "<BODY BGCOLOR=black>\n"
-         "<CENTER><FONT COLOR=RED>OH, NO!<BR>\n");
-    printf("ERROR CODE %d<BR>\n", code);
-    if (code == 503)
-	puts(strerror(err));
-    else
-	puts(why);
-    puts("</FONT></CENTER>\n"
-         "</BODY></HTML>");
-    exit(1);
-}
-
-
 struct passwd *user;
 char *bbspath  = "";
 char *bbsroot  = "";
@@ -55,6 +32,34 @@ char *name      = 0;
 char *email     = 0;
 char *website   = 0;
 char *url       = 0;
+
+
+void
+bbs_error(int code, char *why)
+{
+    int err = errno;
+
+    syslog(LOG_ERR, "%m");
+
+    printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+	   "Connection: close\r\n"
+	   "Server: %s\r\n"
+	   "Cache-Control: no-cache\r\n"
+	   "\r\n", script);
+    puts("<HTML>\n"
+	 "<META NAME=\"ROBOTS\" CONTENT=\"NOINDEX,NOFOLLOW\">"
+	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
+	 "<BODY BGCOLOR=black>\n"
+         "<CENTER><FONT COLOR=RED>OH, NO!<BR>\n");
+    printf("ERROR CODE %d<BR>\n", code);
+    if (code == 503)
+	puts(strerror(err));
+    else
+	puts(why);
+    puts("</FONT></CENTER>\n"
+         "</BODY></HTML>");
+    exit(1);
+}
 
 
 static void
@@ -247,11 +252,21 @@ main(int argc, char **argv, char **envp)
 
 	    switch ( comment(name,email,public,website,text,art) ) {
 	    case 1:
+		printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+		       "Connection: close\r\n"
+		       "Server: %s\r\n"
+		       "Cache-Control: no-cache\r\n"
+		       "\r\n", script);
 		puts("<html>");
 		printf("<meta http-equiv=\"Refresh\" Content=0; URL=%s/%s/\">\n", bbsroot, url);
 		puts("</html>");
 		exit(0);
 	    case 2:
+		printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+		       "Connection: close\r\n"
+		       "Server: %s\r\n"
+		       "Cache-Control: no-cache\r\n"
+		       "\r\n", script);
 		printf("<html>\n"
 		       "<head>\n"
 		       "<title>your comment is being held by "
@@ -278,6 +293,11 @@ main(int argc, char **argv, char **envp)
 	/* complain about missing items */
     }
     else if (getenv("WWW_cancel")) {
+	printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+	       "Connection: close\r\n"
+	       "Server: %s\r\n"
+	       "Cache-Control: no-cache\r\n"
+	       "\r\n", script);
 	puts("<html>");
 	printf("<meta http-equiv=\"Refresh\" Content=1; URL=%s/\">\n", bbsroot);
 	puts("</html>");
@@ -288,8 +308,13 @@ main(int argc, char **argv, char **envp)
     if ( (themfile = alloca(strlen(bbspath) + 20)) == 0 )
 	bbs_error(503, "Out of memory!");
 
-    stash("_DOCUMENT", script);
+    printf("Content-Type: text/html; charset=iso-8859-1\r\n"
+	   "Connection: close\r\n"
+	   "Server: %s\r\n"
+	   "Cache-Control: no-cache\r\n"
+	   "\r\n", script);
 
+    stash("_DOCUMENT", script);
     sprintf(themfile, "%s/post.theme", bbspath);
     process(themfile, putbody, 1, stdout);
 
