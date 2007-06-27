@@ -78,6 +78,9 @@ archive list.
 HTML that is put between articles.
 .It CommentSep
 HTML that is put between comments.
+.It ReadMore
+Text of the "Read More..." marker that's but in when an article is
+truncated on the home page.
 .El
 .Sh SEE ALSO
 .Xr annotations 7 ,

@@ -53,8 +53,9 @@ static struct _keys {
     IT("SimpleArchive", BOOL, simplearchive),
     IT("Comment", DOUBLE, comment),
     IT("Archive", DOUBLE, archive),
-    IT("Separator", DOUBLE, separator),
-    IT("CommentSep", DOUBLE, commentsep),
+    IT("Separator", SINGLE, separator),
+    IT("CommentSep", SINGLE, commentsep),
+    IT("ReadMore", SINGLE, readmore),
 };
 #define NRKEY	(sizeof keys/sizeof keys[0])
 
@@ -89,11 +90,12 @@ readconfig(char *path)
     fmt.edit.start    = "<p CLASS=edit>";
     fmt.edit.end      = "</p>";
     fmt.archive.start = "<hr CLASS=archive><h2 CLASS=archive>Archives</h2>";
-    fmt.comment.start = "<p CLASS=comment>";
+    fmt.comment.start = "<p CLASS=commentbutton>";
     fmt.comment.end   = "</p>";
     fmt.commentsep    = "<hr>";
     fmt.separator     = "";
     fmt.nrposts       = 10;
+    fmt.readmore      = "Read More...";
 
     if (cf == 0)
 	return;

@@ -35,13 +35,10 @@ format.
 This is the RSS feed for the index page, in RSS 0.9 style.
 .It @USERDIR@/post/.htpasswd
 A .htpasswd file is used to restrict access to a web directory.
-You 
-.B must
-have a .htpasswd file in @USERDIR@/post, because Annotations uses
+You MUST have a .htpasswd file in @USERDIR@/post, because Annotations uses
 the html security model not only to keep random people from managing the
 weblog, but also to determine the username of the person who is making a
-particular.   As always, it is good to 
-.B NOT
+particular.   As always, it is good to NOT
 use the same password in the .htpasswd file that you use for ftp or
 telnet into the machine where the weblogs are located.
 .It @USERDIR@/post/index.html

@@ -38,6 +38,7 @@ test -d @USERDIR@/comment || mkdir @USERDIR@/comment && chown $USER @USERDIR@/co
 
 if [ ! -r @USERDIR@/post/.htpasswd ]; then
     htpasswd -c @USERDIR@/post/.htpasswd $USER
+    chown $USER @USERDIR@/post/.htpasswd
 fi
 
 if [ ! -x @USERDIR@/post/post.cgi ]; then

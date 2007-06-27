@@ -38,7 +38,7 @@ addcomments(FILE *f, struct article *art)
 
 
 int
-post(struct article *art, char *bbspath)
+post(struct article *art, char *bbspath, int cooked)
 {
     struct tm tm;
     extern char *lastlast;
@@ -60,7 +60,7 @@ post(struct article *art, char *bbspath)
     }
 
     writectl(art);
-    writemsg(art, FM_IMAGES);
+    writemsg(art, cooked ? FM_COOKED|FM_MORE : FM_IMAGES);
     writehtml(art);
 
     if (lastlast) {
@@ -101,7 +101,7 @@ edit(struct article *art, char *bbspath)
 	buildflags |= PG_HOME|PG_POST;
 
     writectl(art);
-    writemsg(art, FM_COOKED);
+    writemsg(art, FM_COOKED|FM_MORE);
     writehtml(art);
 
     generate(&tm, bbspath, 0, buildflags);

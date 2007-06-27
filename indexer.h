@@ -7,6 +7,7 @@ struct article {
     char  *ctlfile;
     char  *msgfile;
     char  *cmtfile;
+    char  *cmtdir;
     char  *body;
     long   size;
     char  *author;
@@ -17,6 +18,7 @@ struct article {
     char  *preview;
     int    comments;	/* how many comments */
     int    comments_ok;	/* ok to post comments? */
+    int    moderated;	/* okay to publish comments? */
 };
 
 int buildpages(struct tm *, int);

@@ -62,17 +62,6 @@ boolenv(char *s)
     return getenv(s) != 0;
 }
 
-static char *
-xgetenv(char *s)
-{
-    char *val = getenv(s);
-
-    if (val && val[0])
-	return val;
-    return 0;
-}
-
-
 static void
 putbody(FILE *f)
 {
@@ -81,7 +70,7 @@ putbody(FILE *f)
     fputs("<DIV CLASS=\"postwindow\">\n", f);
     if ( (editing||preview) && (art->size > 1)) {
 	fputs("<DIV CLASS=\"previewbox\">\n", f);
-	article(f, art, editing ? FM_COOKED : (FM_PREVIEW|FM_IMAGES));
+	article(f, art, editing ? (FM_COOKED|FM_NOFF) : (FM_PREVIEW|FM_IMAGES));
 	fputs("</DIV>\n"
 	      "<HR>\n", f);
 	rows=10;
@@ -123,6 +112,8 @@ putbody(FILE *f)
 		fprintf(f, "&amp;");
 	    else if (*p == '<')
 		fprintf(f, "&lt;");
+	    else if (*p == '\f')
+		fprintf(f, "&lt;!more!&gt;");
 	    else
 		fputc(*p, f);
     
@@ -252,7 +243,7 @@ main(int argc, char **argv)
 	    if (editing)
 		res = edit(art, bbspath);
 	    else
-		res = post(art, bbspath);
+		res = post(art, bbspath, 0);
 
 	    syslog(LOG_INFO, "res (%s) is %d", editing?"edit":"post", res);
 

@@ -12,6 +12,9 @@
 
 #include "indexer.h"
 #include "formatting.h"
+#include "comment.h"
+
+extern char *xgetenv();
 
 void
 bbs_error(int code, char *why)
@@ -44,6 +47,7 @@ char *bbsroot  = "";
 int fillin      = 0;
 int printenv    = 0;
 int preview     = 0;
+int public      = 1;
 int help        = 0;
 char *text      = 0;
 char *script    = 0;
@@ -92,11 +96,14 @@ putbody(FILE *f)
 	       " VALUE=\"%s\">\n", email ? email : "");
     if (fillin && !email)
 	fprintf(f, " <font CLASS=alert>Please enter your email address</font>\n");
+    fprintf(f, "<INPUT TYPE=CHECKBOX NAME=public %s>&nbsp;publish your email address?\n", public  ? "CHECKED" : "");
     fprintf(f, "<br><DIV align=left CLASS=\"URL\">Website "
 	       "<INPUT TYPE=TEXT NAME=\"website\" SIZE=40 MAXLENGTH=180"
 	       " VALUE=\"%s\">\n", website ? website : "");
+    /*
     if (fillin && !email)
 	fprintf(f, " <font CLASS=alert>Please enter your website</font>\n");
+     */
 
     if (fillin && !text)
 	fprintf(f, "<br><p CLASS=alert>Please enter a message</p>\n");
@@ -139,67 +146,43 @@ putbody(FILE *f)
 
 
 int
-comment(char *from, char *email, char *website, char *text, char *article)
+comment(char *from, char *email,
+        int public, char *website,
+	char *text, struct article *art)
 {
-    struct article *art;
-    int len = strlen(article);
-    char *base = strrchr(article, '/');
+    struct comment *cmt;
     FILE *out;
     time_t now;
     struct tm *tm, *today;
     int buildflags = PG_ARCHIVE;
+    char *ip;
 
-    if ( (art = openart(article)) == 0) {
-	syslog(LOG_ERR, "openart(%s): %m", article);
+    if ( cmt = newcomment(art) )  {
+	cmt->author  = from;
+	cmt->email   = email;
+	cmt->public  = public;
+	cmt->website = website;
+	cmt->text    = text;
+	if ( !savecomment(cmt) )
+	    cmt = 0;
+    }
+
+    if (cmt == 0) {
+	syslog(LOG_ERR, "cannot post comments to [%s]: %m", art->title);
 	return 0;
     }
-    else if (art->comments_ok == 0) {
-	syslog(LOG_INFO, "comment_ok is FALSE");
-	freeart(art);
-	return 0;
-    }
-
-    if ( (out = fopen(art->cmtfile, "a")) == 0) {
-	syslog(LOG_ERR, "cannot open [%s]: %m", art->cmtfile);
-	return 0;
-    }
-    flock(fileno(out), LOCK_EX);
-
-    fprintf(out, "<DIV CLASS=\"comment\">\n");
-    if (art->comments > 0)
-	fputs(fmt.commentsep, out);
-    format(out, text, FM_BLOCKED);
-    fprintf(out, "</DIV>\n");
-    fprintf(out, "<DIV CLASS=\"commentsig\">\n");
-
-    if (email || website) {
-	if (website) {
-	    if (strncasecmp(website, "http://", 7) == 0)
-		fprintf(out, "<a href=\"%s\">%s</a>\n", website, from);
-	    else
-		fprintf(out, "<a href=\"http://%s\">%s</a>\n", website, from);
-	}
-	else
-	    fprintf(out, "<a href=\"mailto:%s\">%s</a>\n", email, from);
-    }
+    if (ip = xgetenv("REMOTE_ADDR"))
+	syslog(LOG_INFO, "COMMENT TO %s FROM %s", art->url, ip);
     else
-	fprintf(out, "%s ", from);
-
-    time(&now);
-    fputs(ctime(&now), out);
-    fprintf(out, "</DIV>\n");
-    fflush(out);
+	syslog(LOG_INFO, "COMMENT TO %s", art->url);
 
     art->comments++;
 
     tm = localtime( &(art->timeofday) );
     today = localtime( &now );
 
-
     writectl(art);
     writehtml(art);
-
-    syslog(LOG_INFO, "COMMENT TO %s", art->url);
 
     generate(tm,bbspath,0,buildflags);
     if ( (tm->tm_year == today->tm_year) && (tm->tm_mon == today->tm_mon) ) {
@@ -207,26 +190,9 @@ comment(char *from, char *email, char *website, char *text, char *article)
 	generate(tm, ".", 0, PG_ALL);
     }
 
-    flock(fileno(out), LOCK_UN);
-    fclose(out);
-
-    return 1;
+    return cmt->publish ? 1 : 2;
 }
 
-
-static char *
-xgetenv(char *e)
-{
-    char *p = getenv(e);
-
-
-    if (p && strlen(p)) {
-	while (isspace(*p) && *p)
-	    ++p;
-	return (*p) ? p : 0;
-    }
-    return 0;
-}
 
 main(int argc, char **argv, char **envp)
 {
@@ -235,9 +201,13 @@ main(int argc, char **argv, char **envp)
     char *bbsdir = "/";
     register c;
     char *p;
+    int status;
+    char *title;
+    struct article *art;
 
-    static char *item[] = { "WWW_text", "WWW_name", "WWW_email", "WWW_website",
-                            "WWW_preview", "WWW_url", "WWW_help", 0 };
+    static char *item[] = { "WWW_text", "WWW_name", "WWW_email",
+                            "WWW_public", "WWW_website", "WWW_preview",
+			    "WWW_url", "WWW_help", 0 };
 
     openlog("comment", LOG_PID, LOG_NEWS);
 
@@ -254,24 +224,55 @@ main(int argc, char **argv, char **envp)
     email   = xgetenv("WWW_email");
     website = xgetenv("WWW_website");
 
+    public  = getenv("WWW_public") != 0;
     preview = getenv("WWW_preview") != 0;
     url     = getenv("WWW_url");
     if ( (p = getenv("WWW_help")) != 0 && strncasecmp(p, "Show", 4) == 0)
 	help = 1;
 
-    if (url == 0)
+    if ( (url == 0) || ((art = openart(url)) == 0) )
 	bbs_error(500, "Nothing to comment to?");
+    else if ( art->comments_ok == 0)
+	bbs_error(400, "Can't comment here");
+
+    if ( (title = alloca(strlen(art->title) + 100)) == 0)
+	bbs_error(503, "Out of memory");
+
+    sprintf(title, "Commenting on %s", art->title);
+    stash("title", title);
 
     if (getenv("WWW_post")) {
 	if (text && name && (email||website) ) {
 
-	    if ( comment(name,email,website,text,url) ) {
+	    switch ( comment(name,email,public,website,text,art) ) {
+	    case 1:
 		printf("HTTP/1.0 303 Ok\r\n"
 		       "Location: %s%s\n"
 		       "\n", bbsroot, url);
 		exit(0);
+	    case 2:
+		printf("HTTP/1.0 200 Ok\r\n"
+		       "\r\n"
+		       "<html>\n"
+		       "<head>\n"
+		       "<title>your comment is being held by "
+		              "the moderator</title>\n"
+		       "<meta http-equiv=refresh content=\"5; URL=%s/%s\">\n"
+		       "</head>\n", bbsroot, url);
+		printf("<body>\n"
+		       "<p>Your comment is being held for moderation, "
+			  "and will not show up until it is "
+			  "approved</p>\n"
+		       "<p>In a second or so, you should be redirected to "
+			  "<a href=\"%s/%s\">the article</a> you commented "
+			  "on.   If you are not, you can "
+			  "<a href=\"%s/%s\">go there now</a></p>\n"
+			"</body>\n", bbsroot, url, bbsroot, url);
+		exit(0);
+	    default:
+		bbs_error(503, "Can't post this comment due to some "
+			       "mysterious system error?");
 	    }
-	    syslog(LOG_ERR, "Oops#1");
 	}
 	else
 	    fillin = 1;

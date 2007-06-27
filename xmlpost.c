@@ -49,17 +49,6 @@ int   preview  = 0;
 int   comments_ok = 0;
 
 
-static char *
-xgetenv(char *s)
-{
-    char *val = getenv(s);
-
-    if (val && val[0])
-	return val;
-    return 0;
-}
-
-
 /*
  * pick apart the handy scew/expat data structure; all
  * we care about are the title & content entries.
@@ -105,21 +94,23 @@ main(int argc, char **argv)
 
     initialize();
 
+    openlog("xmlpost", LOG_PID, LOG_NEWS);
+
     if ( (p = getenv("CONTENT_LENGTH")) == 0)
 	bbs_error(400, "bad call to xmlpost: CONTENT_LENGTH not set");
 
     size = atoi(p);
-    buffer = alloca(size);
+    if ( (buffer = alloca(size)) == 0)
+	bbs_error(503, "Out of memory!");
 
     for (gotten=0; gotten < size; ) {
-	get = read(0, buffer+gotten, size);
-	if (get <= 0) break;
+	get = read(0, buffer+gotten, size-gotten);
+	if (get <= 0) 
+	    break;
 	gotten += get;
     }
     if (gotten < size)
 	bbs_error(400, "truncated xml request");
-
-    openlog("xmlpost", LOG_PID, LOG_NEWS);
 
     /* start here */
 
@@ -159,7 +150,7 @@ main(int argc, char **argv)
     time(&art.timeofday);
     art.comments_ok = comments_ok;
 
-    if (res = post(&art, bbspath)) {
+    if (res = post(&art, bbspath, 1)) {
 	printf("HTTP/1.0 201 Ok\r\n"
 	       "Status: 201/Ok\r\n"
 	       "Location: %s/%s\r\n\r\n", fmt.url, art.url);

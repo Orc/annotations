@@ -13,6 +13,7 @@
 
 #include "formatting.h"
 #include "indexer.h"
+#include "comment.h"
 #include "mapfile.h"
 
 extern char *fetch(char*);
@@ -68,6 +69,7 @@ putindex(FILE *f)
     char *url;
     char *home;
     char *context;
+    char *readmore = 0;
     unsigned int comments;
     unsigned int comments_ok;
     enum { HOME, POST, ARCHIVE } state = HOME;
@@ -100,6 +102,9 @@ putindex(FILE *f)
 	/* context format is:  rep [ text^@{settings}^@ ]
 	 * where settings are ^Aurl
 	 *                    ^Bwebroot
+	 *                    ^C# of comments
+	 *                    ^Dcomments ok
+	 *                    ^Ebreak-mark for (more..)
 	 */
 	/*fwrite(text,size,1,f);*/
 	p = text;
@@ -108,7 +113,7 @@ putindex(FILE *f)
 	for (; (p < end) && (q = memchr(p, 0, end-p)); p = 1+q) {
 	    fwrite(p, (q-p), 1, f);
 
-	    comments_ok = comments = 0;
+	    readmore=comments_ok = comments = 0;
 	    while (*++q) {
 		switch (*q) {
 		case 1: url = 1+q;
@@ -119,8 +124,17 @@ putindex(FILE *f)
 			break;
 		case 4: comments_ok = 1;
 			break;
+		case 5: readmore = 1+q;
+			break;
 		}
 		while (*q) ++q;
+	    }
+
+	    if (readmore) {
+		fprintf(f, "<P CLASS=\"readmore\">"
+			   "<A HREF=%s/%s>", home, url);
+		fputs(fmt.readmore, f);
+		fputs("</A></P>\n", f);
 	    }
 
 	    if ( (state == POST) && url ) {
@@ -195,8 +209,9 @@ openart(char *filename)
     ret->ctlfile = makefile(filename, "message.ctl");
     ret->msgfile = makefile(filename, "message.txt");
     ret->cmtfile = makefile(filename, "comment.txt");
+    ret->cmtdir  = makefile(filename, "comments");
 
-    if ( !(ret->ctlfile || ret->msgfile || ret->cmtfile) ) {
+    if ( !(ret->ctlfile || ret->msgfile || ret->cmtfile || ret->cmtdir) ) {
 	freeart(ret);
 	return 0;
     }
@@ -238,6 +253,9 @@ openart(char *filename)
 		    break;
 	    case 'P':	/* P)review (for rss syndication) */
 		    ret->preview = restofline(p, eol);
+		    break;
+	    case 'B':	/* B)ig Brother is watching you */
+		    ret->moderated = atoi(p);
 		    break;
 	    default:
 		    break;
@@ -285,8 +303,9 @@ newart(struct article *art)
 	    art->ctlfile = makefile(path, "message.ctl");
 	    art->msgfile = makefile(path, "message.txt");
 	    art->cmtfile = makefile(path, "comment.txt");
+	    art->cmtdir  = makefile(path, "comments");
 
-	    return (art->ctlfile && art->msgfile && art->cmtfile);
+	    return(art->ctlfile && art->msgfile && art->cmtfile && art->cmtdir);
 	}
     }
     return 0;
@@ -316,6 +335,7 @@ freeart(struct article *art)
 	if (art->ctlfile) free(art->ctlfile);
 	if (art->msgfile) free(art->msgfile);
 	if (art->cmtfile) free(art->cmtfile);
+	if (art->cmtdir)  free(art->cmtdir);
 	memset(art,0,sizeof *art);
 	free(art);
     }
@@ -337,10 +357,158 @@ writectl(struct article *art)
 	fprintf(f, "U:%s\n", art->url);
 	fprintf(f, "F:%d\n", art->comments);
 	fprintf(f, "C:%d\n", art->comments_ok);
+	fprintf(f, "B:%d\n", art->moderated);
 	fclose(f);
 	return 1;
     }
     return 0;
+}
+
+
+/* allocate a comment structure
+ */
+struct comment *
+newcomment(struct article *art)
+{
+    struct comment *tmp;
+    char *q;
+    int seq;
+    int f;
+
+    if ( tmp = calloc(sizeof tmp[0], 1) ) {
+	tmp->publish = !art->moderated;
+	tmp->art = art;
+	time( &(tmp->when) );
+
+	if ( (tmp->file = malloc(strlen(art->cmtdir) + 60)) == 0 ) {
+	    free(tmp);
+	    return 0;
+	}
+	mkdir (art->cmtdir, 0700);
+
+	sprintf(tmp->file, "%s/", art->cmtdir);
+	q = tmp->file + strlen(tmp->file);
+
+
+	for (seq = art->comments; seq >= 0; seq++) {
+	    sprintf(q, "%04d", seq);
+	    if ( (f = open(tmp->file, O_RDWR|O_CREAT|O_EXCL, 0600)) != -1) {
+		close(f);
+		return tmp;
+	    }
+	    else if (errno != EEXIST)
+		break;
+	}
+	freecomment(tmp);
+	errno = ENFILE;
+    }
+    return 0;
+}
+
+
+struct comment *
+opencomment(char *filename)
+{
+    struct comment *ret = calloc(sizeof *ret, 1);
+    char *base;
+    char *p, *eol, *end;
+    char field;
+    char *ctl;
+    long size;
+
+    if ( ret == 0 )
+	return 0;
+
+    if ( (ret->file = strdup(filename)) == 0) {
+	freecomment(ret);
+	return 0;
+    }
+
+    if ( (ctl = mapfile(ret->file, &size)) == 0 ) {
+	freecomment(ret);
+	return 0;
+    }
+
+    end = ctl + size;
+
+    for (p = ctl; p < end; p = 1+eol) {
+	eol = eoln(p, end);
+
+	if ( p[1] == ':' ) {
+	    field = p[0];
+	    p += 2;
+	    switch (field) {
+	    case 'A':	/* The (A)uthor */
+		    ret->author = restofline(p,eol);
+		    break;
+	    case 'W':	/* their (W)ebsite */
+		    ret->website = restofline(p,eol);
+		    break;
+	    case '@':	/* their email address */
+		    ret->email = restofline(p,eol);
+		    break;
+	    case 'D':	/* comment (D)ate */
+		    ret->when = atol(p);
+		    break;
+	    case 'O':
+		    ret->publish = atoi(p);
+		    break;
+	    case 'P':
+		    ret->public = atoi(p);
+		    break;
+	    case 'T':
+		    if ( ret->text = malloc(1+(end-p)) ) {
+			strncpy(ret->text, p, (end-p));
+			ret->text[end-p] = 0;
+			munmap(ctl, size);
+			return ret;
+		    }
+	    }
+	}
+    }
+    munmap(ctl, size);
+    freecomment(ret);
+    return 0;
+}
+
+void
+freecomment(struct comment *cmt)
+{
+    struct stat st;
+
+    if (cmt->file) {
+	if (stat(cmt->file, &st) != 0 || st.st_size == 0)
+	    unlink(cmt->file);
+	free(cmt->file);
+    }
+    free(cmt);
+}
+
+
+int
+savecomment(struct comment *cmt)
+{
+    FILE *f = fopen(cmt->file, "w");
+    int status;
+
+    if (f) {
+	if (cmt->email)
+	    fprintf(f, "@:%s\n", cmt->email);
+	if (cmt->website)
+	    fprintf(f, "W:%s\n", cmt->website);
+	fprintf(f, "A:%s\n"
+		   "O:%d\n"
+		   "P:%d\n"
+		   "D:%ld\n"
+		   "T:%s", cmt->author, cmt->publish, cmt->public,
+			   cmt->when, cmt->text);
+	fclose(f);
+	status = 1;
+    }
+    else status = 0;
+
+    freecomment(cmt);
+    return status;
 }
 
 
@@ -454,7 +622,13 @@ static int
 puthtml(FILE *f)
 {
     char *text;
-    long  size;
+    long  size, count;
+    struct comment *c;
+    DIR *cd;
+    struct dirent *ce;
+    char *cf;
+    char *p;
+    int firstcomment = 1;
 
     navbar(f, htmlart->url);
     subject(f, htmlart, 0);
@@ -462,7 +636,9 @@ puthtml(FILE *f)
 
     if (text = mapfile(htmlart->msgfile, &size)) {
 	fprintf(f, "<!-- message -->\n");
-	fwrite(text,size,1,f);
+	for (count=size, p = text; count>0; --count, ++p)
+	    if (*p != '\f')
+		putc(*p, f);
 	munmap(text,size);
     }
     else
@@ -475,10 +651,54 @@ puthtml(FILE *f)
 	return 1;
     }
 
-    if (text = mapfile(htmlart->cmtfile, &size)) {
+    if (htmlart->comments > 0) {
 	fprintf(f, "<P class=CommentHeader><B>Comments</B><hr></P>\n");
-	fwrite(text,size,1,f);
-	munmap(text,size);
+	if (text = mapfile(htmlart->cmtfile, &size)) {
+	    fwrite(text,size,1,f);
+	    munmap(text,size);
+	    firstcomment = 0;
+	}
+	cf = alloca(strlen(htmlart->cmtdir) + 60);
+
+	if ( cd = opendir(htmlart->cmtdir)) {
+	    while (ce = readdir(cd)) {
+		if (isdigit(ce->d_name[0])) {
+		    sprintf(cf, "%s/%s", htmlart->cmtdir, ce->d_name);
+		    if ( c = opencomment(cf) ) {
+			if (c->publish) {
+			    fprintf(f, "<DIV CLASS=\"comment\">\n");
+
+			    if (firstcomment)
+				firstcomment = 0;
+			    else
+				fputs(fmt.commentsep, f);
+
+			    format(f, c->text, FM_BLOCKED);
+			    fprintf(f, "</DIV>\n");
+			    fprintf(f, "<DIV CLASS=\"commentsig\">\n");
+
+			    if (c->website) {
+				if (!strncasecmp(c->website, "http://", 7))
+				    fprintf(f, "<a href=\"%s\">%s</a>\n",
+						c->website, c->author);
+				else
+				    fprintf(f, "<a href=\"http://%s\">%s</a>\n",
+						c->website, c->author);
+			    }
+			    else if (c->email && c->public)
+				fprintf(f, "<a href=\"mailto:%s\">%s</a>\n",
+						c->email, c->author);
+			    else
+				fprintf(f, "%s ", c->author);
+			    fputs(ctime( &(c->when) ), f);
+			    fprintf(f, "</DIV>\n");
+			}
+			freecomment(c);
+		    }
+		}
+	    }
+	    closedir(cd);
+	}
     }
     if (htmlart->comments_ok) {
 	fprintf(f, "<!-- comment input -->\n");
@@ -539,13 +759,14 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
     int nrfiles, count;
     char scratch[20];
     int even = 0;
-    int more = (nrposts > 0) ? 2 : 1;
+    int more  = 0;
     int total = 0;
     int i;
     int c;
     int j, k;
     int verbose = fetch("_VERBOSE") != 0;
     char *webroot = fetch("_ROOT");
+    char *q;
 
     m = *tm;
 
@@ -554,7 +775,7 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
     files = malloc(sizeof *files * (nrfiles = 1000));
     count=0;
 
-    while ( more-- ) {
+    do {
 	dmax = scandir(mo, &days, dirent_is_good, dirent_nsort);
 
 	for (j=dmax; j-- > 0; ) {
@@ -571,6 +792,7 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 		printf("T %s\n", b2);
 
 	    for (k = emax; k-- > 0; ) {
+		more ++;
 		total ++;
 		sprintf(art, "%s/%s/message.ctl", dydir, each[k]->d_name);
 		if (count >= nrfiles-5)
@@ -587,8 +809,15 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 	    m.tm_mon = 11;
 	    m.tm_year--;
 	}
+
+	/* bail out when it gets older than the oldest month the weblog
+	 * program existed
+	 */
+	if (m.tm_year < 100)
+	    break;
+
 	strftime(mo, sizeof mo, "%Y/%m", &m);
-    }
+    } while (more < nrposts);
 
     if (iFb) fclose(iFb);
     iFb = tmpfile();
@@ -618,7 +847,14 @@ reindex(struct tm *tm, char *bbspath, int full_rebuild, int nrposts)
 		subject(iFb, art, 1);
 		if (fmt.topsig)
 		    byline(iFb, art, 1);
-		fwrite(art->body, art->size, 1, iFb);
+		if (q=memchr(art->body, '\f', art->size)) {
+		    fwrite(art->body, (q - art->body), 1, iFb);
+		    fputc(0, iFb);
+		    fputc(5, iFb);
+		}
+		else {
+		    fwrite(art->body, art->size, 1, iFb);
+		}
 		if (!fmt.topsig)
 		    byline(iFb, art, 1);
 
@@ -734,7 +970,7 @@ generate(struct tm *tm, char *bbspath, int indexflags, int buildflags)
 
     for (flag = 0x01; flag; flag <<= 1)
 	if (buildflags & flag) {
-	    nrposts = (flag==PG_HOME) ? fmt.nrposts : 0;
+	    nrposts = (flag==PG_HOME || flag == PG_POST) ? fmt.nrposts : 0;
 
 	    if (reindex(tm, bbspath, indexflags, nrposts))
 		buildpages(tm, flag);

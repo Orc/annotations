@@ -1,7 +1,7 @@
 CC=@CC@
 LIBS=@LIBS@
 
-COMMON=theme.o rewrite.o initialize.o
+COMMON=theme.o rewrite.o initialize.o xgetenv.o
 
 POST_OBJS=format.o post.o mapfile.o indexer.o rss.o readconfig.o $(COMMON)
 REINDEX_OBJS=format.o mapfile.o readconfig.o indexer.o reindex.o rss.o $(COMMON)

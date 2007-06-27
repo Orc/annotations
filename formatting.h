@@ -30,6 +30,7 @@ struct fmt {
     struct markup archive;
     char *separator;		/* what to separate articles with */
     char *commentsep;		/* what to separate comments with */
+    char *readmore;		/* ``Read more...'' or similar text */
 };
 
 void getconfig();
@@ -42,5 +43,7 @@ void format(FILE*, char *, int);
 #define FM_BLOCKED	0x08	/* should the format be wrapped in <p>? */
 #define FM_STRIP	0x10
 #define FM_ONELINE	0x20	/* format only one line */
+#define FM_MORE		0x40	/* look for <!more!> tags */
+#define FM_NOFF		0x80	/* remove \f's from output */
 
 #endif/*__FORMATTING_D*/

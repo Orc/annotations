@@ -78,7 +78,7 @@ ffilter(FILE *f, char *bfr, int len)
 	if (*bfr & 0x80)
 	    fprintf(f, "&#%03d;", (unsigned char)(*bfr));
 	    /*putc('?', f);*/
-	else
+	else if (*bfr != '\f')
 	    putc(*bfr, f);
     }
 }

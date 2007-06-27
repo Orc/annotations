@@ -27,9 +27,27 @@ format(FILE *f, char *text, int flags)
     char *para;
     int bold = 0;	/* 0 = not bold, 1 = *bold*, 2 = _bold_ */
     int quote = 0;
+    int more = 1;
+
 
     if (flags & FM_COOKED) {
-	fputs(text, f);
+	if (flags & FM_MORE) {
+	    for (p=text; *p; )
+		if ( more && (*p == '<') && (strncmp(p, "<!more!>", 8) == 0) ) {
+		    putc('\f', f);
+		    p += 8;
+		    more = 0;
+		}
+		else
+		    putc(*p++, f);
+	}
+	else if (flags & FM_NOFF) {
+	    for (p=text; *p; ++p)
+		if (*p != '\f')
+		    putc(*p, f);
+	}
+	else
+	    fputs(text, f);
 	return;
     }
 
@@ -157,6 +175,10 @@ format(FILE *f, char *text, int flags)
 		    fputc(*p++, f);
 	    }
 	    fprintf(f, "%s>", align);
+	}
+	else if ( (*p == '<') && (strncmp(p, "<!more!>", 8) == 0) ) {
+	    fputc('\f', f);
+	    p += 8;
 	}
 	else
 	    fputc(*p, f);
