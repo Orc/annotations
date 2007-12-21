@@ -20,6 +20,9 @@ struct article {
     int    comments;	/* how many comments */
     int    comments_ok;	/* ok to post comments? */
     int    moderated;	/* okay to publish comments? */
+    int    format;	/* preformatted or not? */
+#define HTML 0
+#define MARKDOWN 1
 };
 
 int buildpages(struct tm *, int);
@@ -44,5 +47,9 @@ int             newart(struct article*);
 int             writectl(struct article*);
 int             writemsg(struct article*, int);
 void            freeart(struct article*);
+
+
+typedef int (*stfu)(const void*,const void*);
+FILE *rewrite(char*);
 
 #endif/*__INDEXER_D*/

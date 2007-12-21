@@ -217,7 +217,15 @@ subject(FILE *f, struct article *art, int oktolink)
 	if (oktolink && fmt.linktitle && (p = fetch("_ROOT")) ) {
 	    fprintf(f,"<A HREF=\"%s%s\">\n", p, art->url);
 	}
-	format(f, art->title, 0);
+	switch ( art->format ) {
+	case MARKDOWN:
+		mkd_push(art->title, strlen(art->title));
+		mkd_text(f);
+		break;
+	default:
+		format(f, art->title, 0);
+		break;
+	}
 	if (oktolink && fmt.linktitle && p) {
 	    fprintf(f, "</A>\n");
 	}
@@ -225,13 +233,6 @@ subject(FILE *f, struct article *art, int oktolink)
     }
 }
 
-void
-body(FILE *f, char *text, int flags)
-{
-    fputs(fmt.body.start, f);
-    format(f, text, flags|FM_BLOCKED);
-    fputs(fmt.body.end, f);
-}
 
 void
 article(FILE *f, struct article *art, int flags)
@@ -240,7 +241,18 @@ article(FILE *f, struct article *art, int flags)
 	subject(f, art, 0);
 	if (fmt.topsig)
 	    byline(f, art, !(flags & FM_PREVIEW) );
-	body(f, art->body, flags);
+
+	fputs(fmt.body.start, f);
+	switch ( art->format ) {
+	case MARKDOWN:
+		markdown(mkd_string(art->body,art->size), f, 0);
+		break;
+	default:
+		format(f, art->body, flags|FM_BLOCKED);
+		break;
+	}
+	fputs(fmt.body.end, f);
+
 	if (!fmt.topsig)
 	    byline(f, art, !(flags & FM_PREVIEW) );
     }

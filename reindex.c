@@ -13,6 +13,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#if HAVE_LIBGEN_H
+#include <libgen.h>
+#endif
 
 #include "formatting.h"
 #include "mapfile.h"
@@ -34,7 +37,7 @@ nsort(struct dirent **a, struct dirent **b)
 
 
 static int 
-yselect(const struct dirent *e)
+yselect(struct dirent *e)
 {
     int i;
 
@@ -48,7 +51,7 @@ yselect(const struct dirent *e)
 
 
 static int
-mselect(const struct dirent *e)
+mselect(struct dirent *e)
 {
     char ifile[80];
     struct stat st;
@@ -80,11 +83,11 @@ archivepage()
     }
 
     memset(&tm, 0, sizeof tm);
-    years = scandir(".", &year, yselect, nsort);
+    years = scandir(".", &year, yselect, (stfu)nsort);
 
     while (years-- > 0) {
 	yrdir = year[years]->d_name;
-	months = scandir(year[years]->d_name, &month, mselect, nsort);
+	months = scandir(year[years]->d_name, &month, mselect, (stfu)nsort);
 
 	if (verbose)
 	    fprintf(stderr, "months for %s = %d\n",years[year]->d_name, months);
@@ -113,7 +116,7 @@ archivepage()
 int
 do_one_page(char *page)
 {
-    struct art *art;
+    struct article *art;
 
     if (art = openart(page)) {
 	stash("LOCATION", page);

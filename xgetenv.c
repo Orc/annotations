@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 char *
 xgetenv(char *s)
 {

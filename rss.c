@@ -6,11 +6,13 @@
 
 #include <stdio.h>
 #include <time.h>
-#include <malloc.h>
 #include <string.h>
 
 #include <sys/types.h>
+#include <stdlib.h>
 #include <dirent.h>
+
+#include <mkdio.h>
 
 extern int dirent_nsort(struct dirent **a, struct dirent **b);
 extern int dirent_is_good(struct dirent *e);
@@ -147,7 +149,8 @@ rss2post(FILE *f, struct article *art)
 	       "  <item>\n"
 	       "    <title>");
 
-    format(f, art->title, FM_STRIP);
+    mkd_push(art->title, strlen(art->title));
+    mkd_text(f);
     fprintf(f,"</title>\n"
 	       "    <link>%s/%s</link>\n"
 	       "    <guid isPermaLink=\"true\">%s/%s</guid>\n"
@@ -155,7 +158,13 @@ rss2post(FILE *f, struct article *art)
 					      fmt.url, art->url,
 					      tod);
     fprintf(f, "    <description><![CDATA[");
-    ffilter(f, art->body, art->size);
+    switch ( art->format ) {
+    case MARKDOWN:
+	markdown(mkd_string(art->body, art->size), f, 0);
+    default:
+	ffilter(f, art->body, art->size);
+	break;
+    }
     fprintf(f, "]]></description>\n");
     fprintf(f, "  </item>\n");
 }
@@ -210,13 +219,20 @@ atompost(FILE *f, struct article *art)
 	       "    <id>%s/%s</id>\n"
 	       "    <title>",
 		    fmt.url, art->url);
-    format(f, art->title, FM_STRIP);
+    mkd_push(art->title, strlen(art->title));
+    mkd_text(f);
     fprintf(f,"</title>\n"
 	       "    <link rel=\"alternate\" type=\"text/html\" href=\"%s/%s\" />\n",
 		    fmt.url, art->url);
     fprintf(f, "    <content type=\"text/html\" mode=\"escaped\" xml:lang=\"en-us\"  xml:base=\"%s\">\n", fmt.url);
     fprintf(f, "    <![CDATA[");
-    ffilter(f, art->body, art->size);
+    switch ( art->format ) {
+    case MARKDOWN:
+	markdown(mkd_string(art->body, art->size), f, 0);
+    default:
+	ffilter(f, art->body, art->size);
+	break;
+    }
     fprintf(f, "]]>\n"
 	       "    </content>\n");
     fprintf(f, "    <issued>%s</issued>\n"
@@ -226,7 +242,8 @@ atompost(FILE *f, struct article *art)
 	       "    <dc:creator>%s</dc:creator>\n"
 	       "    <dc:subject>",
 		    fmt.name, art->author);
-    format(f, art->title, FM_STRIP);
+    mkd_push(art->title, strlen(art->title));
+    mkd_text(f);
     fprintf(f, "</dc:subject>\n"
 	       "    <dc:format>text/html</dc:format>\n"
 	       "  </entry>\n");
@@ -288,12 +305,12 @@ syndicate(struct tm *tm, char *bbspath, struct syndicator *dsw)
 
     while (tries--) {
 	strftime(mo, sizeof mo, "%Y/%m", &m);
-	dmax = scandir(mo, &days, dirent_is_good, dirent_nsort);
+	dmax = scandir(mo, &days, dirent_is_good, (stfu)dirent_nsort);
 
 	for (j=dmax; j-- > 0; ) {
 
 	    sprintf(dydir, "%s/%s", mo, days[j]->d_name);
-	    if ( (emax=scandir(dydir, &each, dirent_is_good, dirent_nsort)) < 1)
+	    if ( (emax=scandir(dydir, &each, dirent_is_good, (stfu)dirent_nsort)) < 1)
 		continue;
 
 	    for (k = emax; k-- > 0; ) {

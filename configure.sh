@@ -117,6 +117,8 @@ else
     AC_SUB XMLPOST ''
 fi
 
+AC_CHECK_HEADERS libgen.h
+
 test -d "$AC_WWWDIR" || AC_FAIL "Cannot find web directory $AC_WWWDIR"
 test -d "$AC_CGIDIR" || AC_FAIL "Cannot find CGI directory $AC_CGIDIR"
 

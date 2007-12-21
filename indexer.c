@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <mkdio.h>
+
 #include "formatting.h"
 #include "indexer.h"
 #include "comment.h"
@@ -19,6 +21,7 @@
 
 extern char *fetch(char*);
 extern char *eoln(char*,char*);
+extern FILE *rewrite(char*);
 
 /*
  * rebuild $bbsroot/${HomePage}		{ all articles this month }
@@ -114,7 +117,8 @@ putindex(FILE *f)
 	for (; (p < end) && (q = memchr(p, 0, end-p)); p = 1+q) {
 	    fwrite(p, (q-p), 1, f);
 
-	    readmore=comments_ok = comments = 0;
+	    readmore = 0;
+	    comments_ok = comments = 0;
 	    while (*++q) {
 		switch (*q) {
 		case 1: url = 1+q;
@@ -264,6 +268,10 @@ openart(char *filename)
 	    case 'F':	/* # of (F)ollowups */
 		    ret->comments = atoi(p);
 		    break;
+	    case 'Z':	/* article format */
+		    if ( toupper(p[0]) == 'M' )
+			ret->format = MARKDOWN;
+		    break;
 	    case 'P':	/* P)review (for rss syndication) */
 		    ret->preview = restofline(p, eol);
 		    break;
@@ -321,6 +329,7 @@ newart(struct article *art)
 	    art->msgfile = makefile(path, "message.txt");
 	    art->cmtfile = makefile(path, "comment.txt");
 	    art->cmtdir  = makefile(path, "comments");
+	    art->format  = MARKDOWN;
 
 	    return(art->ctlfile && art->msgfile && art->cmtfile && art->cmtdir);
 	}
@@ -373,6 +382,8 @@ writectl(struct article *art)
 	fprintf(f, "T:%s\n",art->title);
 	if (art->category && art->category[0])
 	    fprintf(f, "X:%s\n", art->category);
+	if ( art->format == MARKDOWN )
+	    fprintf(f, "Z:Markdown\n");
 	fprintf(f, "U:%s\n", art->url);
 	fprintf(f, "F:%d\n", art->comments);
 	fprintf(f, "C:%d\n", art->comments_ok);
@@ -538,7 +549,7 @@ writemsg(struct article *art, int flags)
     errno = EINVAL;
 
     if (art && art->msgfile && (f = fopen(art->msgfile, "w")) ) {
-	format(f, art->body, flags|FM_BLOCKED);
+	fwrite(art->body, art->size, 1, f);
 	fclose(f);
 	return 1;
     }
@@ -553,8 +564,11 @@ alink(FILE *f, char *pfx, char *sfx, char *line, char *end)
     while (*line != ':' && line < end)
 	putc(*line++, f);
     putc('>', f);
-    if (*line == ':')
-	format(f, ++line, FM_ONELINE);
+    if (*line == ':') {
+	++line;
+	mkd_push(line,end-line);
+	mkd_text(f);
+    }
     fprintf(f, "</a>%s\n",sfx);
 }
 
@@ -565,7 +579,8 @@ static void
 navbar(FILE *f, char *url)
 {
     static char *db = 0;
-    static int size, usize;
+    static long size;
+    static int usize;
     static int hasdb = 1;
     char *end;
     char *p, *low, *high;
@@ -614,7 +629,7 @@ navbar(FILE *f, char *url)
 		;
 	    if (next < end-1) {
 		++next;
-		alink(f, "&laquo; ", " ", next, end);
+		alink(f, "&laquo; ", " ", next, eoln(next,end));
 	    }
 	    else
 		next=0;
@@ -676,7 +691,7 @@ puthtml(FILE *f)
 	}
 	cf = alloca(strlen(htmlart->cmtdir) + 60);
 
-	cmax = scandir(htmlart->cmtdir, &say, dirent_is_good, dirent_nsort);
+	cmax = scandir(htmlart->cmtdir, &say, dirent_is_good, (stfu)dirent_nsort);
 	for (i=0; i < cmax; i++) {
 	    sprintf(cf, "%s/%s", htmlart->cmtdir, say[i]->d_name);
 	    if ( c = opencomment(cf) ) {
@@ -688,7 +703,7 @@ puthtml(FILE *f)
 		    else
 			fputs(fmt.commentsep, f);
 
-		    format(f, c->text, FM_BLOCKED);
+		    markdown(mkd_string(c->text, strlen(c->text)), f, 0);
 		    fprintf(f, "</DIV>\n");
 		    fprintf(f, "<DIV CLASS=\"commentsig\">\n");
 
@@ -804,13 +819,13 @@ reindex(struct tm *tm, char *bbspath, int flags, int nrposts)
     do {
 	strftime(mo, sizeof mo, "%Y/%m", &m);
 
-	dmax = scandir(mo, &days, dirent_is_good, dirent_nsort);
+	dmax = scandir(mo, &days, dirent_is_good, (stfu)dirent_nsort);
 
 	for (j=dmax; j-- > 0; ) {
 
 	    sprintf(dydir, "%s/%s", mo, days[j]->d_name);
 
-	    if ((emax=scandir(dydir, &each, dirent_is_good, dirent_nsort)) < 1)
+	    if ((emax=scandir(dydir, &each, dirent_is_good, (stfu)dirent_nsort)) < 1)
 		continue;
 
 	    if ( (flags & INDEX_DAY) && (atoi(days[j]->d_name) != tm->tm_mday) )
@@ -884,13 +899,20 @@ reindex(struct tm *tm, char *bbspath, int flags, int nrposts)
 		subject(iFb, art, 1);
 		if (fmt.topsig)
 		    byline(iFb, art, 1);
-		if (q=memchr(art->body, '\f', art->size)) {
-		    fwrite(art->body, (q - art->body), 1, iFb);
-		    fputc(0, iFb);
-		    fputc(5, iFb);
-		}
-		else {
-		    fwrite(art->body, art->size, 1, iFb);
+
+		switch (art->format) {
+		case MARKDOWN:
+		    markdown(mkd_string(art->body, art->size), iFb, 0);
+		    break;
+		default:
+		    if (q=memchr(art->body, '\f', art->size)) {
+			fwrite(art->body, (q - art->body), 1, iFb);
+			fputc(0, iFb);
+			fputc(5, iFb);
+		    }
+		    else
+			fwrite(art->body, art->size, 1, iFb);
+		    break;
 		}
 		if (!fmt.topsig)
 		    byline(iFb, art, 1);

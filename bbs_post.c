@@ -259,6 +259,7 @@ main(int argc, char **argv)
 	art->author = author;
 	art->title = title;
 	art->url = xgetenv("WWW_url");
+	art->format = MARKDOWN;
 	time(&art->timeofday);
     }
     art->comments_ok = comments_ok;

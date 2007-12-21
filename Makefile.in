@@ -1,5 +1,5 @@
 CC=@CC@
-LIBS=@LIBS@
+LIBS=@LIBS@ -lmarkdown
 
 COMMON=theme.o rewrite.o initialize.o xgetenv.o @UNCGI@
 

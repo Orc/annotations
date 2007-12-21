@@ -11,6 +11,8 @@
 #include <syslog.h>
 #include <errno.h>
 
+#include <mkdio.h>
+
 #include "indexer.h"
 #include "formatting.h"
 #include "comment.h"
@@ -86,7 +88,7 @@ putbody(FILE *f)
 
     if ( preview && text && (strlen(text) > 1) ) {
 	fputs("<DIV CLASS=\"previewbox\">\n", f);
-	format(f, text, FM_BLOCKED);
+	markdown(mkd_string(text,strlen(text)),f,0);
 	fputs("</DIV>\n"
 	      "<HR>\n", f);
 	rows=10;
