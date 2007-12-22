@@ -566,8 +566,7 @@ alink(FILE *f, char *pfx, char *sfx, char *line, char *end)
     putc('>', f);
     if (*line == ':') {
 	++line;
-	mkd_push(line,end-line);
-	mkd_text(f);
+	mkd_text(line,end-line, f, MKD_NOLINKS|MKD_NOIMAGE);
     }
     fprintf(f, "</a>%s\n",sfx);
 }

@@ -149,8 +149,7 @@ rss2post(FILE *f, struct article *art)
 	       "  <item>\n"
 	       "    <title>");
 
-    mkd_push(art->title, strlen(art->title));
-    mkd_text(f);
+    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE);
     fprintf(f,"</title>\n"
 	       "    <link>%s/%s</link>\n"
 	       "    <guid isPermaLink=\"true\">%s/%s</guid>\n"
@@ -219,8 +218,7 @@ atompost(FILE *f, struct article *art)
 	       "    <id>%s/%s</id>\n"
 	       "    <title>",
 		    fmt.url, art->url);
-    mkd_push(art->title, strlen(art->title));
-    mkd_text(f);
+    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE);
     fprintf(f,"</title>\n"
 	       "    <link rel=\"alternate\" type=\"text/html\" href=\"%s/%s\" />\n",
 		    fmt.url, art->url);
@@ -242,8 +240,7 @@ atompost(FILE *f, struct article *art)
 	       "    <dc:creator>%s</dc:creator>\n"
 	       "    <dc:subject>",
 		    fmt.name, art->author);
-    mkd_push(art->title, strlen(art->title));
-    mkd_text(f);
+    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE);
     fprintf(f, "</dc:subject>\n"
 	       "    <dc:format>text/html</dc:format>\n"
 	       "  </entry>\n");

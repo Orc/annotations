@@ -5,6 +5,8 @@
 #include <time.h>
 #include <sys/file.h>
 
+#include <mkdio.h>
+
 #include "formatting.h"
 #include "indexer.h"
 
@@ -214,21 +216,11 @@ subject(FILE *f, struct article *art, int oktolink)
 
     if (art->title) {
 	fputs(fmt.title.start, f);
-	if (oktolink && fmt.linktitle && (p = fetch("_ROOT")) ) {
+	if (oktolink && fmt.linktitle && (p = fetch("_ROOT")) )
 	    fprintf(f,"<A HREF=\"%s%s\">\n", p, art->url);
-	}
-	switch ( art->format ) {
-	case MARKDOWN:
-		mkd_push(art->title, strlen(art->title));
-		mkd_text(f);
-		break;
-	default:
-		format(f, art->title, 0);
-		break;
-	}
-	if (oktolink && fmt.linktitle && p) {
+	mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE);
+	if (oktolink && fmt.linktitle && p)
 	    fprintf(f, "</A>\n");
-	}
 	fputs(fmt.title.end, f);
     }
 }
