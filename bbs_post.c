@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <time.h>
 #include <pwd.h>
 #include <sys/types.h>
@@ -87,7 +88,7 @@ bbs_error(int code, char *why)
 	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
 	 "<BODY BGCOLOR=black>\n"
          "<CENTER><FONT COLOR=RED>OH, NO!<BR>");
-    printf("ERROR CODE %s<BR>\n", code);
+    printf("ERROR CODE %d<BR>\n", code);
     if (code/100 == 5)
 	puts(strerror(err));
     else
@@ -278,9 +279,9 @@ main(int argc, char **argv)
 		       "Connection: close\r\n"
 		       "Server: %s\r\n"
 		       "Cache-Control: no-cache\r\n"
-		       "\r\n", script);
+		       "\r\n", script ? script :"core.dump");
 		puts("<html>");
-		printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%spost\">\n", bbsroot);
+		printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%spost\">\n", bbsroot ? bbsroot : "core.dump");
 		printf("<html><head><title>article %s</title></head>",
 			editing ? "updated" : "posted");
 		printf("<body><p>The article has been %s.  If your web browser "

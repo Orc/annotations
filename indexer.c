@@ -49,6 +49,7 @@ dirent_nsort(struct dirent **a, struct dirent **b)
     return atoi((*a)->d_name) - atoi((*b)->d_name);
 }
 
+
 char *
 restofline(char *p, char *q)
 {
@@ -671,9 +672,16 @@ puthtml(FILE *f)
 
     if (text = mapfile(htmlart->msgfile, &size)) {
 	fprintf(f, "<!-- message -->\n");
-	for (count=size, p = text; count>0; --count, ++p)
-	    if (*p != '\f')
-		putc(*p, f);
+	switch (htmlart->format) {
+	case MARKDOWN:
+	    markdown(mkd_string(text, size), f, 0);
+	    break;
+	default:
+	    for (count=size, p = text; count>0; --count, ++p)
+		if (*p != '\f')
+		    putc(*p, f);
+	    break;
+	}
 	munmap(text,size);
     }
     else
@@ -702,7 +710,7 @@ puthtml(FILE *f)
 		    else
 			fputs(fmt.commentsep, f);
 
-		    markdown(mkd_string(c->text, strlen(c->text)), f, 0);
+		    markdown(mkd_string(c->text, strlen(c->text)), f, MKD_NOLINKS|MKD_NOIMAGE);
 		    fprintf(f, "</DIV>\n");
 		    fprintf(f, "<DIV CLASS=\"commentsig\">\n");
 

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/file.h>
+#include <syslog.h>
 
 #include <mkdio.h>
 
@@ -19,176 +20,6 @@
 
 
 char *fetch(char*);
-
-void
-format(FILE *f, char *text, int flags)
-{
-    char *p, *q;
-    int newpara = 1;
-    int didpara = 0;
-    char *para;
-    int bold = 0;	/* 0 = not bold, 1 = *bold*, 2 = _bold_ */
-    int quote = 0;
-    int more = 1;
-
-
-    if (flags & FM_COOKED) {
-	if (flags & FM_MORE) {
-	    for (p=text; *p; )
-		if ( more && (*p == '<') && (strncmp(p, "<!more!>", 8) == 0) ) {
-		    putc('\f', f);
-		    p += 8;
-		    more = 0;
-		}
-		else
-		    putc(*p++, f);
-	}
-	else if (flags & FM_NOFF) {
-	    for (p=text; *p; ++p)
-		if (*p != '\f')
-		    putc(*p, f);
-	}
-	else
-	    fputs(text, f);
-	return;
-    }
-
-    if ( (flags & FM_BLOCKED) ) {
-	para = isspace(text[0]) ? "blockquote" : "p";
-	fprintf(f, "<%s>\n", para);
-	didpara=1;
-    }
-
-    for (p = text; flags & FM_ONELINE ? (*p != '\n') : (*p); ++p) {
-	if ( (*p == '\n') && (p[1] == '\n') ) {
-	    ++p;
-	    if (!newpara) {
-		if (didpara)
-		    fprintf(f, "</%s>\n", para);
-		para = (p[1] == '\t' || p[1] == ' ') ? "blockquote" : "p";
-		fprintf(f, "<%s>\n", para);
-		newpara = 1;
-		didpara = 1;
-		continue;
-	    }
-	}
-
-	newpara = 0;
-	if (*p == '*') {
-	    if ( (bold & 1) && !isspace(p[-1]) ) {
-		if ( !(flags & FM_STRIP) )
-		    fputs("</B>", f);
-		bold &= ~1;
-	    }
-	    else if ( ((bold &1) == 0) && isalnum(p[1])) {
-		if ( !(flags & FM_STRIP) )
-		    fputs("<B>", f);
-		bold |= 1;
-	    }
-	    else
-		fputc(*p, f);
-	}
-	else if (*p == '_') {
-	    if ( (bold & 2) && !isspace(p[-1]) ) {
-		if ( !(flags & FM_STRIP) )
-		    fputs("</I>", f);
-		bold &= ~2;
-	    }
-	    else if ( ((bold & 2) == 0) && isalnum(p[1])) {
-		if ( !(flags & FM_STRIP) )
-		    fputs("<I>", f);
-		bold |= 2;
-	    }
-	    else
-		fputc(*p, f);
-	}
-	else if (*p == '\\' && 1[p])
-	    fputc(*++p, f);
-	else if (*p == '<' && !(isalpha(p[1]) || p[1] == '/') )
-	    fputs( (flags & FM_STRIP) ? "?" : "&lt;",f);
-	else if (*p == '&' && isspace(p[1]))
-	    fputs( (flags & FM_STRIP) ? "?" : "&amp;",f);
-	else if (flags & FM_STRIP) {
-	    if (*p == '&') {
-		while (*p && *p != ';')
-		    ++p;
-		fputc('?',f);
-	    }
-	    else if (*p == '<') {
-		while (*p && *p != '>')
-		    ++p;
-	    }
-	    else if ( 0x80 & *p)
-		fputc('?', f);
-	    else
-		fputc(*p, f);
-	}
-	else if ( (*p == '{') && (flags & FM_IMAGES) ) {
-	    int start;
-	    char *align;
-
-	    if (strncasecmp(p, "{pic:", 5) == 0) {
-		start = 5;
-		align="";
-	    }
-	    else if (strncasecmp(p, "{left:", 6) == 0) {
-		start = 6;
-		align=" align=left";
-	    }
-	    else if (strncasecmp(p, "{right:", 7) == 0) {
-		start = 7;
-		align=" align=right";
-	    }
-	    else if (strncasecmp(p, "{http:", 6) == 0) {
-		fputs("<A HREF=\"", f);
-		++p;
-		while (*p && *p != '}')
-		    fputc(*p++, f);
-		fputc('"', f);
-		fputc('>', f);
-		if (*p) ++p;
-		if (*p == '{') {
-		    ++p;
-		    while (*p && *p != '}')
-			fputc(*p++, f);
-		}
-		else
-		    fprintf(f, "link");
-		fputs("</A>", f);
-		continue;
-	    }
-	    else {
-		fputc(*p, f);
-		continue;
-	    }
-
-	    fprintf(f, "\n<IMG SRC=\"");
-	    p += start;
-	    if (strncasecmp(p, "http://", 7) != 0)
-		fputs(fetch("weblog"), f);
-
-	    while ( *p && (*p != '}') )
-		fputc(*p++, f);
-	    fputc('"', f);
-	    if (p[1] == '{') {
-		p += 2;
-		fprintf(f, " width=");
-		while ( *p && (*p != '}') )
-		    fputc(*p++, f);
-	    }
-	    fprintf(f, "%s>", align);
-	}
-	else if ( (*p == '<') && (strncmp(p, "<!more!>", 8) == 0) ) {
-	    fputc('\f', f);
-	    p += 8;
-	}
-	else
-	    fputc(*p, f);
-    }
-    if (didpara)
-	fprintf(f, "</%s>\n", para);
-}
-
 
 void
 byline(FILE *f, struct article *art, int with_url)
@@ -240,7 +71,7 @@ article(FILE *f, struct article *art, int flags)
 		markdown(mkd_string(art->body,art->size), f, 0);
 		break;
 	default:
-		format(f, art->body, flags|FM_BLOCKED);
+		fwrite(art->body,art->size,1,f);
 		break;
 	}
 	fputs(fmt.body.end, f);

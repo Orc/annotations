@@ -160,6 +160,7 @@ rss2post(FILE *f, struct article *art)
     switch ( art->format ) {
     case MARKDOWN:
 	markdown(mkd_string(art->body, art->size), f, 0);
+	break;
     default:
 	ffilter(f, art->body, art->size);
 	break;
