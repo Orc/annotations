@@ -1,28 +1,31 @@
-CC=@CC@
+CC=@CC@ -L.
 LIBS=@LIBS@ -lmarkdown
 
-COMMON=theme.o rewrite.o initialize.o xgetenv.o @UNCGI@
+LIBOBJS=articles.o format.o indexer.o initialize.o mapfile.o post.o \
+	readconfig.o rewrite.o rss.o theme.o xgetenv.o
+LIBA=libannot.a
 
-POST_OBJS=format.o post.o mapfile.o indexer.o rss.o readconfig.o $(COMMON)
-REINDEX_OBJS=format.o mapfile.o readconfig.o indexer.o reindex.o rss.o $(COMMON)
-COMMENT_OBJS=comment.o format.o mapfile.o readconfig.o indexer.o rss.o post.o $(COMMON)
 PGMS=post reindex comment @XMLPOST@
 CGIDIR=@CGIDIR@
 EXEDIR=@exedir@
 
 all: $(PGMS)
 
-post: $(POST_OBJS) bbs_post.o
-	$(CC) $(CFLAGS) -o $@ $(POST_OBJS) bbs_post.o $(LIBS)
+$(LIBA): $(LIBOBJS)
+	ar crv $(LIBA) $(LIBOBJS)
+	ranlib $(LIBA)
 
-xmlpost: $(POST_OBJS) xmlpost.o
-	$(CC) $(CFLAGS) -o $@ $(POST_OBJS) xmlpost.o $(LIBS)
+post: bbs_post.o $(LIBA)
+	$(CC) $(CFLAGS) -o $@ bbs_post.o $(LIBA) $(LIBS)
 
-reindex: $(REINDEX_OBJS)
-	$(CC) $(CFLAGS) -o $@ $(REINDEX_OBJS) $(LIBS)
+xmlpost: xmlpost.o $(LIBA)
+	$(CC) $(CFLAGS) -o $@ xmlpost.o $(LIBA) $(LIBS)
 
-comment: $(COMMENT_OBJS)
-	$(CC) $(CFLAGS) -o $@ $(COMMENT_OBJS) $(LIBS)
+reindex: indexer.o $(LIBA)
+	$(CC) $(CFLAGS) -o $@ reindex.o $(LIBA) $(LIBS)
+
+comment: comment.o $(LIBA)
+	$(CC) $(CFLAGS) -o $@ comment.o $(LIBA) $(LIBS)
 
 install_:
 	true

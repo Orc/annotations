@@ -73,13 +73,14 @@ esac'
 #
 TARGET=annotations
 
-test -r configure.inc || ( test -d SCCS && get configure.inc )
 . ./configure.inc
-
 
 AC_INIT $TARGET
 
 AC_PROG_CC
+
+AC_CHECK_FIELD dirent d_namlen sys/types.h dirent.h
+
 
 [ -z "$AC_WWWDIR" ] && AC_WWWDIR="$AC_PREFIX/htdocs"
 [ -z "$AC_CGIDIR" ] && AC_CGIDIR="$AC_WWWDIR/cgi-bin"
