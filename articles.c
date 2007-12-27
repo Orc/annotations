@@ -53,6 +53,33 @@ sortde(struct dirent **a, struct dirent **b)
     return atoi((*b)->d_name) - atoi((*a)->d_name);
 }
 
+static int
+numericsort(char *a, char *b)
+{
+    char *ap, *bp;
+    int av, bv;
+
+    if ( !a ) return b ? -1 : 0;
+
+    while ( *a && *b ) {
+	if ( isdigit(*a) ) {
+	    av = strtol(a, &ap, 10);
+	    bv = strtol(b, &bp, 10);
+
+	    if ( av != bv ) return av - bv;
+	    a = ap;
+	    b = bp;
+	}
+	else if ( *a == *b ) {
+	    ++a;
+	    ++b;
+	}
+	else
+	    break;
+    }
+    return *a - *b;
+}
+
 
 static char*
 mkfile(char *path, char *file)
@@ -88,9 +115,17 @@ void
 pathname(char *dest, char *prefix, struct dirent *e)
 {
 #ifdef HAVE_D_NAMLEN
-    sprintf(dest, "%s/%.*s", prefix, e->d_namlen, e->d_name);
+    if ( prefix )
+	sprintf(dest, "%s/%.*s", prefix, e->d_namlen, e->d_name);
+    else {
+	strncpy(dest, e->d_name, e->d_namlen);
+	dest[e->d_namlen] = 0;
+    }
 #else
-    sprintf(dest, "%s/%s", prefix, e->d_name);
+    if ( prefix )
+	sprintf(dest, "%s/%s", prefix, e->d_name);
+    else
+	strcpy(dest, e->d_name);
 #endif
 }
 
@@ -107,11 +142,13 @@ foreach(char *path, int count, void *context, chooser func)
     int added = 0;
     char *filepath;
 
-    nrfiles = scandir(path, &files, choosede, (desorter)sortde);
-    filepath = alloca(strlen(path) + 1 + longest(files,nrfiles) + 1);
+    nrfiles = scandir(path ? path : ".", &files, choosede, (desorter)sortde);
+
+    filepath = alloca( (path?strlen(path):0) + 1 + longest(files,nrfiles) + 1);
 
     for ( i=0; i < nrfiles; i++ ) {
 	pathname(filepath, path, files[i]);
+
 	if ( (ret = (*func)(filepath,count,context)) > 0 ) {
 	    added += ret;
 	    if ( count && ((count -= ret) <= 0) ) break;
@@ -121,21 +158,17 @@ foreach(char *path, int count, void *context, chooser func)
 }
 
 
-int
+static int
 added_okay(char *path, int ignored_count, Articles *p)
 {
-    struct entry *ret;
-    char *file = mkfile(path, "message.ctl");
+    char *file = alloca(strlen(path) + strlen("/message.ctl") + 1);
 
-    if ( access(path, R_OK) != 0 ) {
-	free(file);
+    sprintf(file, "%s/message.ctl", path);
+
+    if ( access(file, R_OK) != 0 )
 	return 0;
-    }
-    ret = &EXPAND( *p );
 
-    ret->ctl = file;
-    ret->text = mkfile(path, "message.txt");
-    ret->index = mkfile(path, "index.html");
+    EXPAND( *p ) = strdup(path);
     return 1;
 }
 
@@ -167,9 +200,9 @@ every_year(char *path, int count, Articles *list)
 
 
 int
-getlatest(char *path, int count, Articles *list)
+getlatest(int count, Articles *list)
 {
-    every_year(path, count, list);
+    every_year(0, count, list);
 }
 
 
@@ -180,17 +213,10 @@ intersects(Articles a, Articles b)
 
     if ( !( S(a) && S(b) ) ) return 0;
 
-    cmp = strcmp(T(a)[0].ctl, T(b)[0].ctl);
+    if ( numericsort(T(a)[0], T(b)[0]) <= 0 ) 
+	return numericsort(T(a)[0], T(b)[S(b)-1]) >= 0;
 
-    if ( cmp > 0 ) {	/* A[0] < B[0]; if A[S(A)-1] < B[0] it doesn't match */
-	cmp = strcmp(T(a)[S(a)-1].ctl, T(b)[0].ctl);
-	return cmp <= 0;
-    }
-
-    if ( cmp < 0 )
-	return intersects(b,a);
-
-    return 1;
+    return intersects(b,a);
 }
 
 
@@ -219,12 +245,12 @@ char **argv;
     }
     CREATE(articles);
 
-    getlatest(webroot, count, &articles);
-    for ( i = 0; i < S(articles); i++ )
-	printf("%d: %s\n", i, T(articles)[i].index);
-
+    getlatest(count, &articles);
     if ( !S(articles) )
 	exit(0);
+
+    printf("[`%s` ...", T(articles)[0]);
+    printf(" `%s`]\n", T(articles)[S(articles)-1]);
 
     CREATE(A);
     CREATE(B);
@@ -234,19 +260,17 @@ char **argv;
 
 
     if ( intersects(A,B) )
-	puts("failure: [2007/10] should not intersect [2007/11], but does");
+	puts("[2007/10] intersects [2007/11] ?  No, this is wrong.");
     if ( intersects(B,A) )
-	puts("failure: [2007/11] should not intersect [2007/10], but does");
+	puts("[2007/11] intersects [2007/10] ?  No, this is wrong.");
 
     if ( !intersects(A,A) )
-	puts("failure: [2007/11] should intersect [2007/11], but does not");
+	puts("[2007/10 does not intersect [2007/10] ?  No, this is wrong.");
 
+    if ( cmp = intersects(A,articles) ) 
+	printf("[latest %d] intersects [2007/10]\n", count);
 
-    cmp = intersects(A,articles);
-    expected = !!(strcmp(T(A)[0].ctl, T(articles)[S(articles)-1].ctl) > 0);
-
-    if ( cmp ^ expected )
-	printf("[latest %d] should%s intersect [2007/10], but does%s\n",
-		    count, cmp ? "" : " not", cmp ? " not" :"" );
+    if ( cmp = intersects(B,articles) )
+	printf("[latest %d] intersects [2007/11]\n", count);
 }
 #endif
