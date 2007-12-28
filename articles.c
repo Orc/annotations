@@ -94,7 +94,7 @@ mkfile(char *path, char *file)
 }
 
 
-int
+static int
 longest(struct dirent **de, int count)
 {
     int len, max = 0;
@@ -111,7 +111,7 @@ longest(struct dirent **de, int count)
 }
 
 
-void
+static void
 pathname(char *dest, char *prefix, struct dirent *e)
 {
 #ifdef HAVE_D_NAMLEN
@@ -128,10 +128,6 @@ pathname(char *dest, char *prefix, struct dirent *e)
 	strcpy(dest, e->d_name);
 #endif
 }
-
-
-typedef int (*chooser)(char*,int,void*);
-
 
 int
 foreach(char *path, int count, void *context, chooser func)
@@ -193,16 +189,16 @@ every_month(char *path, int count, Articles *list)
 }
 
 int
-every_year(char *path, int count, Articles *list)
+every_year(int count, Articles *list)
 {
-    return foreach(path, count, list, (chooser)every_month);
+    return foreach(count, list, (chooser)every_month);
 }
 
 
 int
-getlatest(int count, Articles *list)
+latest(int count, Articles *list)
 {
-    every_year(0, count, list);
+    return every_year(count, list);
 }
 
 
@@ -245,7 +241,7 @@ char **argv;
     }
     CREATE(articles);
 
-    getlatest(count, &articles);
+    latest(count, &articles);
     if ( !S(articles) )
 	exit(0);
 
