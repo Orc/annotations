@@ -29,11 +29,10 @@ typedef int (*chooser)(char*,int,void*);
 
 extern int foreach(char*,int,void*,chooser);
 
-extern int every_post(char*,int,Articles*);	/* all articles in a day */
-extern int every_day(char*,int,Articles*);	/* all articles in a month */
-extern int every_month(char*,int,Articles*);	/* all articles in a year */
-extern int every_year(int,Articles*);		/* all articles */
-extern int latest(int,Articles*);		/* latest <n> articles */
+extern int dailyposts(char*,int,Articles*);	/* all articles in a day */
+extern int monthlyposts(char*,int,Articles*);	/* all articles in a month */
+extern int yearlyposts(char*,int,Articles*);	/* all articles in a year */
+extern int everypost(int,Articles*);		/* all articles */
 extern int intersects(Articles,Articles);	/* articles in common? */
 
 #endif/*_ARTICLES_D*/

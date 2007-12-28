@@ -11,6 +11,8 @@
 #include "cstring.h"
 #include "articles.h"
 
+typedef int (*desorter)(const void *, const void *);
+
 static int
 freedea(struct dirent **dea, int count)
 {
@@ -169,36 +171,41 @@ added_okay(char *path, int ignored_count, Articles *p)
 }
 
 
+/*
+ * return all the articles for a given day
+ */
 int
-every_post(char *path, int count, Articles *list)
+dailyposts(char *path, int count, Articles *list)
 {
     return foreach(path, count, list, (chooser)added_okay);
 }
 
 
+/*
+ * return all the articles for a given month
+ */
 int
-every_day(char *path, int count, Articles *list)
+monthlyposts(char *path, int count, Articles *list)
 {
-    return foreach(path, count, list, (chooser)every_post);
+    return foreach(path, count, list, (chooser)dailyposts);
 }
 
+/*
+ * return all the articles for a given year
+ */
 int
-every_month(char *path, int count, Articles *list)
+yearlyposts(char *path, int count, Articles *list)
 {
-    return foreach(path, count, list, (chooser)every_day);
+    return foreach(path, count, list, (chooser)monthlyposts);
 }
 
+/*
+ * return every article
+ */
 int
-every_year(int count, Articles *list)
+everypost(int count, Articles *list)
 {
-    return foreach(count, list, (chooser)every_month);
-}
-
-
-int
-latest(int count, Articles *list)
-{
-    return every_year(count, list);
+    return foreach(0, count, list, (chooser)yearlyposts);
 }
 
 
@@ -241,8 +248,7 @@ char **argv;
     }
     CREATE(articles);
 
-    latest(count, &articles);
-    if ( !S(articles) )
+    if ( everypost(count, &articles) == 0 )
 	exit(0);
 
     printf("[`%s` ...", T(articles)[0]);
@@ -251,9 +257,8 @@ char **argv;
     CREATE(A);
     CREATE(B);
 
-    every_day("2007/10", 0, &A);
-    every_day("2007/11", 0, &B);
-
+    monthlyposts("2007/10", 0, &A);
+    monthlyposts("2007/11", 0, &B);
 
     if ( intersects(A,B) )
 	puts("[2007/10] intersects [2007/11] ?  No, this is wrong.");
