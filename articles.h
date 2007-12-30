@@ -52,6 +52,6 @@ int category(ARTICLE*,char*);		/* set the categories of an article */
 int comments(ARTICLE*,int);		/* set comments_ok (1/0) */
 int format(ARTICLE*,int);		/* set article format */
 int saveart(ARTICLE*);			/* save and close an article */
-int freeart(ARTICLE*);			/* discard an article */
+void freeart(ARTICLE*);			/* discard an article */
 
 #endif/*_ARTICLES_D*/
