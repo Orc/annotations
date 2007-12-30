@@ -118,6 +118,22 @@ else
     AC_SUB XMLPOST ''
 fi
 
+# Check for the existance of the MAP_FAILED mmap() return value
+#
+cat - > $$.c << EOF
+#include <sys/types.h>
+#include <sys/mman.h>
+
+int badmap = MAP_FAILED;
+EOF
+
+if $AC_CC -c -o $$.o $$.c; then
+    LOG "MAP_FAILED exists.  Good."
+else
+    LOG "Need to define MAP_FAILED."
+    AC_DEFINE MAP_FAILED -1
+fi
+
 AC_CHECK_HEADERS libgen.h
 
 test -d "$AC_WWWDIR" || AC_FAIL "Cannot find web directory $AC_WWWDIR"
