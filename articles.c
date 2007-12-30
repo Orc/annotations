@@ -260,13 +260,17 @@ char **argv;
     monthlyposts("2007/10", 0, &A);
     monthlyposts("2007/11", 0, &B);
 
-    if ( intersects(A,B) )
-	puts("[2007/10] intersects [2007/11] ?  No, this is wrong.");
-    if ( intersects(B,A) )
-	puts("[2007/11] intersects [2007/10] ?  No, this is wrong.");
+    if ( S(A) && S(B) ) {
+	if ( intersects(A,B) )
+	    puts("[2007/10] intersects [2007/11] ?  No, this is wrong.");
+	if ( intersects(B,A) )
+	    puts("[2007/11] intersects [2007/10] ?  No, this is wrong.");
+    }
 
-    if ( !intersects(A,A) )
-	puts("[2007/10 does not intersect [2007/10] ?  No, this is wrong.");
+    if ( S(A) ) {
+	if ( !intersects(A,A) )
+	    puts("[2007/10 does not intersect [2007/10] ?  No, this is wrong.");
+    }
 
     if ( cmp = intersects(A,articles) ) 
 	printf("[latest %d] intersects [2007/10]\n", count);
