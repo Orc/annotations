@@ -133,6 +133,7 @@ else
     LOG "Need to define MAP_FAILED."
     AC_DEFINE MAP_FAILED -1
 fi
+rm -f $$.c $$.o
 
 AC_CHECK_HEADERS libgen.h
 
