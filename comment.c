@@ -88,7 +88,7 @@ putbody(FILE *f)
 
     if ( preview && text && (strlen(text) > 1) ) {
 	fputs("<DIV CLASS=\"previewbox\">\n", f);
-	markdown(mkd_string(text,strlen(text)),f,0);
+	markdown(mkd_string(text,strlen(text), MKD_NOHEADER),f,0);
 	fputs("</DIV>\n"
 	      "<HR>\n", f);
 	rows=10;

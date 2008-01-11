@@ -35,15 +35,5 @@ struct fmt {
 
 void getconfig();
 extern struct fmt fmt;
-void format(FILE*, char *, int);
-
-#define FM_IMAGES	0x01
-#define	FM_COOKED	0x02
-#define	FM_PREVIEW	0x04
-#define FM_BLOCKED	0x08	/* should the format be wrapped in <p>? */
-#define FM_STRIP	0x10
-#define FM_ONELINE	0x20	/* format only one line */
-#define FM_MORE		0x40	/* look for <!more!> tags */
-#define FM_NOFF		0x80	/* remove \f's from output */
 
 #endif/*__FORMATTING_D*/

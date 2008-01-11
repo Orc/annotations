@@ -59,7 +59,7 @@ post(struct article *art, char *bbspath, int cooked)
     }
 
     writectl(art);
-    writemsg(art, cooked ? FM_COOKED|FM_MORE : FM_IMAGES);
+    writemsg(art);
     writehtml(art);
 
     if (lastlast) {
@@ -100,7 +100,7 @@ edit(struct article *art, char *bbspath)
 	buildflags |= PG_HOME|PG_POST;
 
     writectl(art);
-    writemsg(art, FM_COOKED|FM_MORE);
+    writemsg(art);
     writehtml(art);
 
     generate(&tm, bbspath, 0, buildflags);

@@ -110,7 +110,7 @@ putbody(FILE *f)
     fputs("<DIV CLASS=\"postwindow\">\n", f);
     if ( (editing||preview) && (art->size > 1)) {
 	fputs("<DIV CLASS=\"previewbox\">\n", f);
-	article(f, art, editing ? (FM_COOKED|FM_NOFF) : (FM_PREVIEW|FM_IMAGES));
+	article(f, art);
 	fputs("</DIV>\n"
 	      "<HR>\n", f);
 	rows=10;

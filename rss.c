@@ -159,7 +159,7 @@ rss2post(FILE *f, struct article *art)
     fprintf(f, "    <description><![CDATA[");
     switch ( art->format ) {
     case MARKDOWN:
-	markdown(mkd_string(art->body, art->size), f, 0);
+	markdown(mkd_string(art->body, art->size, MKD_NOHEADER), f, 0);
 	break;
     default:
 	ffilter(f, art->body, art->size);
@@ -227,7 +227,7 @@ atompost(FILE *f, struct article *art)
     fprintf(f, "    <![CDATA[");
     switch ( art->format ) {
     case MARKDOWN:
-	markdown(mkd_string(art->body, art->size), f, 0);
+	markdown(mkd_string(art->body, art->size, MKD_NOHEADER), f, 0);
     default:
 	ffilter(f, art->body, art->size);
 	break;

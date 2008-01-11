@@ -63,12 +63,12 @@ article(FILE *f, struct article *art, int flags)
     if (art->body) {
 	subject(f, art, 0);
 	if (fmt.topsig)
-	    byline(f, art, !(flags & FM_PREVIEW) );
+	    byline(f, art, 0);
 
 	fputs(fmt.body.start, f);
 	switch ( art->format ) {
 	case MARKDOWN:
-		markdown(mkd_string(art->body,art->size), f, 0);
+		markdown(mkd_string(art->body,art->size, MKD_NOHEADER), f, 0);
 		break;
 	default:
 		fwrite(art->body,art->size,1,f);
@@ -77,6 +77,6 @@ article(FILE *f, struct article *art, int flags)
 	fputs(fmt.body.end, f);
 
 	if (!fmt.topsig)
-	    byline(f, art, !(flags & FM_PREVIEW) );
+	    byline(f, art, 0);
     }
 }

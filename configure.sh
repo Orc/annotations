@@ -79,6 +79,19 @@ AC_INIT $TARGET
 
 AC_PROG_CC
 
+MARKDOWN=`acLookFor markdown`
+
+if [ -z "$MARKDOWN" ]; then
+    AC_FAIL "Cannot find markdown";
+fi
+
+MVERSION=`$MARKDOWN -V | tr -dc '[0-9.]'`
+
+if [ -z "$MVERSION" ]; then
+    AC_FAIL "$MARKDOWN -V does not return sensible output?"
+fi
+expr "$MVERSION" '>=' '0.9' || AC_FAIL "markdown must be >= version 0.9"
+
 AC_CHECK_FIELD dirent d_namlen sys/types.h dirent.h
 
 

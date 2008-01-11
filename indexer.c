@@ -544,7 +544,7 @@ savecomment(struct comment *cmt)
 
 
 int
-writemsg(struct article *art, int flags)
+writemsg(struct article *art)
 {
     FILE *f;
     errno = EINVAL;
@@ -674,7 +674,7 @@ puthtml(FILE *f)
 	fprintf(f, "<!-- message -->\n");
 	switch (htmlart->format) {
 	case MARKDOWN:
-	    markdown(mkd_string(text, size), f, 0);
+	    markdown(mkd_string(text, size, MKD_NOHEADER), f, 0);
 	    break;
 	default:
 	    for (count=size, p = text; count>0; --count, ++p)
@@ -710,7 +710,7 @@ puthtml(FILE *f)
 		    else
 			fputs(fmt.commentsep, f);
 
-		    markdown(mkd_string(c->text, strlen(c->text)), f, MKD_NOLINKS|MKD_NOIMAGE);
+		    markdown(mkd_string(c->text, strlen(c->text), MKD_NOHEADER), f, MKD_NOLINKS|MKD_NOIMAGE);
 		    fprintf(f, "</DIV>\n");
 		    fprintf(f, "<DIV CLASS=\"commentsig\">\n");
 
@@ -909,7 +909,7 @@ reindex(struct tm *tm, char *bbspath, int flags, int nrposts)
 
 		switch (art->format) {
 		case MARKDOWN:
-		    markdown(mkd_string(art->body, art->size), iFb, 0);
+		    markdown(mkd_string(art->body, art->size, MKD_NOHEADER), iFb, 0);
 		    break;
 		default:
 		    if (q=memchr(art->body, '\f', art->size)) {

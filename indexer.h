@@ -45,7 +45,7 @@ char* makefile(char*, char*);
 struct article *openart(char*);
 int             newart(struct article*);
 int             writectl(struct article*);
-int             writemsg(struct article*, int);
+int             writemsg(struct article*);
 void            freeart(struct article*);
 
 
