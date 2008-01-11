@@ -312,7 +312,7 @@ printart(ARTICLE *a, FILE *f)
 
 	if ( a->body && a->size ) {
 	    fputs("<div class=body>\n", f);
-	    markdown(mkd_string(a->body,a->size),f,0);
+	    markdown(mkd_string(a->body,a->size, MKD_NOHEADER),f,0);
 	    fputs("</div>\n", f);
 	}
 	if ( a->author ) {
