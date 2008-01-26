@@ -24,6 +24,9 @@ xmlpost: xmlpost.o $(LIBA)
 reindex: reindex.o $(LIBA)
 	$(CC) $(CFLAGS) -o $@ reindex.o $(LIBA) $(LIBS)
 
+reindex.o: reindex.c
+	$(CC) $(CFLAGS) -c -DVERSION=\"`cat VERSION`\" reindex.c
+
 comment: comment.o $(LIBA)
 	$(CC) $(CFLAGS) -o $@ comment.o $(LIBA) $(LIBS)
 

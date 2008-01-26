@@ -148,13 +148,17 @@ main(int argc, char **argv)
     int flags = 0;
     register opt;
     struct passwd *pw;
+    extern char version[];
 
     pgm = basename(argv[0]);
 
 
     opterr = 1;
-    while ( (opt=getopt(argc, argv, "asfv")) != EOF )
+    while ( (opt=getopt(argc, argv, "asfvV")) != EOF )
 	switch (opt) {
+	case 'V':   printf("%s: annotations %s + discount %s\n",
+			    pgm, VERSION, version);
+		    exit(0);
 	case 'v':   stash("_VERBOSE", "T");
 		    break;
 	case 'f':   flags = INDEX_FULL;
