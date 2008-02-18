@@ -22,7 +22,11 @@
 #include "indexer.h"
 #include "syndicate.h"
 
+#include <mkdio.h>
+
 char *pgm;
+
+extern char VERSION[];
 
 
 char *bbspath, *bbsroot, *bbsdir;
@@ -148,7 +152,6 @@ main(int argc, char **argv)
     int flags = 0;
     register opt;
     struct passwd *pw;
-    extern char version[];
 
     pgm = basename(argv[0]);
 
@@ -157,7 +160,7 @@ main(int argc, char **argv)
     while ( (opt=getopt(argc, argv, "asfvV")) != EOF )
 	switch (opt) {
 	case 'V':   printf("%s: annotations %s + discount %s\n",
-			    pgm, VERSION, version);
+			    pgm, VERSION, markdown_version);
 		    exit(0);
 	case 'v':   stash("_VERBOSE", "T");
 		    break;

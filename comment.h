@@ -13,6 +13,7 @@ struct comment {
     char  *text;
     time_t when;
     int    approved;		/* approved for publication? */
+    int    linksok;		/* okay to include links and images? */
     int    publish_mail;	/* publish the email address? */
 };
 

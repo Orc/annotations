@@ -484,6 +484,9 @@ opencomment(char *filename)
 	    case 'O':
 		    ret->approved = atoi(p);
 		    break;
+	    case 'L':
+		    ret->linksok = atoi(p);
+		    break;
 	    case 'P':
 		    ret->publish_mail = atoi(p);
 		    break;
@@ -710,7 +713,7 @@ puthtml(FILE *f)
 		    else
 			fputs(fmt.commentsep, f);
 
-		    markdown(mkd_string(c->text, strlen(c->text), MKD_NOHEADER), f, MKD_NOLINKS|MKD_NOIMAGE);
+		    markdown(mkd_string(c->text, strlen(c->text), MKD_NOHEADER), f, c->linksok ? 0 : MKD_NOLINKS|MKD_NOIMAGE);
 		    fprintf(f, "</DIV>\n");
 		    fprintf(f, "<DIV CLASS=\"commentsig\">\n");
 

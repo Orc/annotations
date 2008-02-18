@@ -290,6 +290,12 @@ main(int argc, char **argv)
 				"</html>\n", editing ? "updated" : "posted",
 				bbsroot);
 		fflush(stdout);
+		if ( fork() )
+		    exit(0);
+		if ( fork() )
+		    exit(0);
+		chdir(bbspath);
+		execl("post/after.post", "after.post", 0);
 		exit(0);
 	    }
 	}

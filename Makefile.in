@@ -2,7 +2,7 @@ CC=@CC@ -L.
 LIBS=@LIBS@ -lmarkdown
 
 LIBOBJS=articles.o format.o indexer.o initialize.o mapfile.o post.o \
-	readconfig.o rewrite.o rss.o theme.o xgetenv.o
+	readconfig.o rewrite.o rss.o theme.o xgetenv.o version.o
 LIBA=libannot.a
 
 PGMS=post reindex comment @XMLPOST@
@@ -25,10 +25,15 @@ reindex: reindex.o $(LIBA)
 	$(CC) $(CFLAGS) -o $@ reindex.o $(LIBA) $(LIBS)
 
 reindex.o: reindex.c
-	$(CC) $(CFLAGS) -c -DVERSION=\"`cat VERSION`\" reindex.c
+	$(CC) $(CFLAGS) -c reindex.c $(LIBA)
 
 comment: comment.o $(LIBA)
 	$(CC) $(CFLAGS) -o $@ comment.o $(LIBA) $(LIBS)
+
+version.c: VERSION
+	echo -n "char VERSION[] = \"" > version.c
+	echo -n `cat VERSION`        >> version.c
+	echo "\";"                   >> version.c
 
 install_:
 	true
@@ -48,10 +53,10 @@ install: install_@XMLPOST@ $(PGMS) $(CGIDIR)
 	-@INSTALL_DATA@  reindex.8 @mandir@/man8/@EXEC_PREFIX@reindex.8
 
 clean:
-	rm -f *.o $(PGMS)
+	rm -f *.o $(PGMS) version.c
 
 distclean spotless: clean
-	rm -f @CONFIGURE_FILES@ @GENERATED_FILES@
+	rm -f @CONFIGURE_FILES@ @GENERATED_FILES@ 
 
 uncgi.o : uncgi/uncgi.c
 	$(CC) -c -o uncgi.o -DLIBRARY=1 uncgi/uncgi.c

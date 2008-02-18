@@ -14,9 +14,15 @@
 
 #include <mkdio.h>
 
+#ifndef MKD_CDATA
+#define CANNOT_CDATA
+#define MKD_CDATA 0
+#endif
+
 extern int dirent_nsort(struct dirent **a, struct dirent **b);
 extern int dirent_is_good(struct dirent *e);
 
+extern char VERSION[];
 
 /* pick a few sentences off the start of an article
  */
@@ -99,11 +105,8 @@ rss2header(FILE *f)
     strftime(tod, 80, "%a, %d %b %Y %H:%M:%S %Z", localtime(&now));
 
     fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-               "<rss"
-               "  xmlns:dc=\"http://purl.org/dc/elements/1.1/\""
-               "  xmlns:content=\"http://purl.org/rss/1.0/modules/content/\""
-	       "  version=\"2.0\">\n"
-	       "<channel>\n"
+               "<rss version=\"2.0\">\n");
+    fprintf(f, "<channel>\n"
 	       "  <title>%s</title>\n", fmt.name);
     fprintf(f, "  <link>%s</link>\n", fmt.url);
     fprintf(f, "  <description>%s</description>\n",
@@ -149,23 +152,25 @@ rss2post(FILE *f, struct article *art)
 	       "  <item>\n"
 	       "    <title>");
 
-    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE);
+    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE|MKD_CDATA);
     fprintf(f,"</title>\n"
 	       "    <link>%s/%s</link>\n"
 	       "    <guid isPermaLink=\"true\">%s/%s</guid>\n"
 	       "    <pubDate>%s</pubDate>\n", fmt.url, art->url,
 					      fmt.url, art->url,
 					      tod);
-    fprintf(f, "    <description><![CDATA[");
+    /*fprintf(f, "    <description><![CDATA[");*/
+    fprintf(f, "    <description>");
     switch ( art->format ) {
     case MARKDOWN:
-	markdown(mkd_string(art->body, art->size, MKD_NOHEADER), f, 0);
+	markdown(mkd_string(art->body, art->size, MKD_NOHEADER), f, MKD_CDATA);
 	break;
     default:
 	ffilter(f, art->body, art->size);
 	break;
     }
-    fprintf(f, "]]></description>\n");
+    /*fprintf(f, "]]></description>\n");*/
+    fprintf(f, "</description>\n");
     fprintf(f, "  </item>\n");
 }
 
@@ -191,13 +196,17 @@ atomheader(FILE *f)
     strftime(tod, sizeof tod, "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
 
     fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-	       "<feed version=\"0.3\" xmlns=\"http://purl.org/atom/ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n"
-	       "<title type=\"text/plain\">%s</title>\n"
-	       "<tagline type=\"text/plain\">%s</tagline>\n"
+	       "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n"
+	       "<id>%s</id>\n"
+	       "<title type=\"text\">%s</title>\n"
+	       "<subtitle type=\"text\">%s</subtitle>\n"
 	       "<link rel=\"alternate\" type=\"text/html\" href=\"%s\" />\n"
-	       "<modified>%s</modified>\n"
-	       "<generator>Annotations</generator>\n",
-		    fmt.name, fmt.name, fmt.url, tod);
+	       "<link rel=\"self\" type=\"application/atom+xml\" href=\"%s/%s\" />\n"
+	       "<updated>%s</updated>\n"
+	       "<generator uri=\"http://www.pell.portland.or.us/~orc/Code/annotations\" version=\"%s\">Annotations</generator>\n",
+		    fmt.url, fmt.name, fmt.about, fmt.url,
+		    fmt.url, atomfeed.filename,
+		    tod, VERSION);
 }
 
 
@@ -216,35 +225,31 @@ atompost(FILE *f, struct article *art)
 
     fprintf(f, "\n"
 	       "  <entry>\n"
-	       "    <id>%s/%s</id>\n"
-	       "    <title>",
-		    fmt.url, art->url);
-    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE);
+	       "    <title type=\"html\">");
+    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE|MKD_CDATA);
     fprintf(f,"</title>\n"
 	       "    <link rel=\"alternate\" type=\"text/html\" href=\"%s/%s\" />\n",
 		    fmt.url, art->url);
-    fprintf(f, "    <content type=\"text/html\" mode=\"escaped\" xml:lang=\"en-us\"  xml:base=\"%s\">\n", fmt.url);
-    fprintf(f, "    <![CDATA[");
+    fprintf(f, "    <id>%s/%s</id>\n", fmt.url, art->url);
+    fprintf(f, "    <content type=\"html\" xml:lang=\"en-us\"  xml:base=\"%s\">\n", fmt.url);
     switch ( art->format ) {
     case MARKDOWN:
-	markdown(mkd_string(art->body, art->size, MKD_NOHEADER), f, 0);
+	markdown(mkd_string(art->body, art->size, MKD_NOHEADER), f, MKD_CDATA);
+	break;
     default:
+	fprintf(f, "    <![CDATA[");
 	ffilter(f, art->body, art->size);
+	fprintf(f, "]]>\n");
 	break;
     }
-    fprintf(f, "]]>\n"
-	       "    </content>\n");
-    fprintf(f, "    <issued>%s</issued>\n"
-	       "    <modified>%s</modified>\n"
-	       "    <author><name>%s</name></author>\n", tod, mod, art->author);
-    fprintf(f, "    <dc:source>%s</dc:source>\n"
-	       "    <dc:creator>%s</dc:creator>\n"
-	       "    <dc:subject>",
-		    fmt.name, art->author);
-    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE);
-    fprintf(f, "</dc:subject>\n"
-	       "    <dc:format>text/html</dc:format>\n"
-	       "  </entry>\n");
+    fprintf(f, "    </content>\n");
+    fprintf(f, "    <published>%s</published>\n"
+	       "    <updated>%s</updated>\n"
+	       "    <author>\n"
+	       "        <name>%s</name>\n"
+	       "        <uri>%s</uri>\n"
+	       "    </author>\n", tod, mod, art->author, fmt.url);
+    fprintf(f, "  </entry>\n");
 }
 
 
@@ -285,6 +290,10 @@ syndicate(struct tm *tm, char *bbspath, struct syndicator *dsw)
     int j, k;
     char dydir[25];
 
+
+#ifdef CANNOT_CDATA
+    return 0;	/* syndication formats have changed. Again. */
+#else
 
     if (! (*dsw->ok)() )
 	return 0;
@@ -352,4 +361,5 @@ syndicate(struct tm *tm, char *bbspath, struct syndicator *dsw)
     fclose(rssf);
 
     return 1;
+#endif
 }
