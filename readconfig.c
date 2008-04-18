@@ -45,7 +45,7 @@ static struct _keys {
     IT("Chapter", DOUBLE, chapter),
     IT("Article", DOUBLE, article),
     IT("Title", DOUBLE, title),
-    IT("Byline", DOUBLE, byline),
+    IT("Byline", SINGLE, byline),
     IT("Body", DOUBLE, body),
     IT("Post", DOUBLE, post),
     IT("Edit", DOUBLE, edit),
@@ -81,8 +81,7 @@ readconfig(char *path)
     fmt.article.end   = "</div>";
     fmt.title.start   = "<H3 CLASS=title>";
     fmt.title.end     = "</H3>";
-    fmt.byline.start  = "<p CLASS=byline>--";
-    fmt.byline.end    = "</p>";
+    fmt.byline        = "&mdash;%A %D";
     fmt.body.start    = "<div CLASS=body>";
     fmt.body.end      = "</div>";
     fmt.post.start    = "<h4 CLASS=post>";
@@ -150,6 +149,19 @@ readconfig(char *path)
 	    }
 	}
 	munmap(text, size);
+    }
+
+    if (fmt.url) {
+	/* build the url base from the weblog url */
+	char *go = 0;
+
+	if ( strncasecmp(fmt.url, "http://", 7) == 0 )
+	    go = fmt.url + 7;
+	else if ( strncasecmp(fmt.url, "https://", 8) == 0)
+	    go = fmt.url + 8;
+
+	if ( go && (go = strchr(go, '/')) && (fmt.base = strdup(fmt.url)))
+	    fmt.base[go-fmt.url] = 0;
     }
 
     if (fmt.name && fmt.name[0])

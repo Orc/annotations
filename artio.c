@@ -296,10 +296,12 @@ freeart(ARTICLE* a)
 int saveart(ARTICLE*);			/* save and close an article */
 
 
+#if TESTING
 int
 printart(ARTICLE *a, FILE *f)
 {
     char *time;
+    MMIOT *doc;
 
     if ( a ) {
 	fputs("<div class=article>\n", f);
@@ -327,6 +329,7 @@ printart(ARTICLE *a, FILE *f)
 	fputs("</div>\n", f);
     }
 }
+#endif
 
 
 #if TESTING

@@ -155,19 +155,29 @@ putindex(FILE *f)
 	    if ( !(url && home) )
 		continue;
 
-	    if (comments > 0) {
+	    if (comments_ok) {
+		fprintf(f, "<FORM METHOD=GET ACTION=\"%s", home);
+		if ( comments > 0 )
+		    fputs(url, f);
+		else
+		    fputs("comment", f);
+		fprintf(f, "\">\n");
+		fputs(fmt.comment.start, f);
+		fprintf(f, "<INPUT TYPE=SUBMIT NAME=comment VALUE=\"");
+		if ( comments > 0 )
+		    fprintf(f, "%d comment%s", comments, (comments!=1)?"s":"");
+		else
+		    fprintf(f, "Comment?");
+		fprintf(f, "\">\n");
+		fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", url);
+		fputs(fmt.comment.end, f);
+		fprintf(f, "</FORM>\n");
+	    }
+	    else if (comments > 0) {
 		fputs(fmt.comment.start, f);
 		fprintf(f, "<A HREF=\"%s%s\">%d comment%s</A>\n",
 			    home, url, comments, (comments!=1)?"s":"");
 		fputs(fmt.comment.end,f);
-	    }
-	    else if (comments_ok) {
-		fprintf(f, "<FORM METHOD=GET ACTION=\"%scomment\">\n", home);
-		fputs(fmt.comment.start, f);
-		fprintf(f, "<INPUT TYPE=SUBMIT NAME=comment VALUE=Comment>\n");
-		fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", url);
-		fputs(fmt.comment.end, f);
-		fprintf(f, "</FORM>\n");
 	    }
 	}
 	fwrite(p, end-p, 1, f);
@@ -668,6 +678,7 @@ puthtml(FILE *f)
     int firstcomment = 1;
     int cmax, i;
     struct dirent **say;
+    MMIOT *doc;
 
     navbar(f, htmlart->url);
     subject(f, htmlart, 0);
@@ -677,6 +688,9 @@ puthtml(FILE *f)
 	fprintf(f, "<!-- message -->\n");
 	switch (htmlart->format) {
 	case MARKDOWN:
+	    doc = mkd_string(text,size, MKD_NOHEADER);
+	    if ( fmt.base )
+		mkd_basename(doc, fmt.base);
 	    markdown(mkd_string(text, size, MKD_NOHEADER), f, 0);
 	    break;
 	default:
@@ -818,6 +832,7 @@ reindex(struct tm *tm, char *bbspath, int flags, int nrposts)
     int verbose = fetch("_VERBOSE") != 0;
     char *webroot = fetch("_ROOT");
     char *q;
+    MMIOT *doc;
 
 
     m = *tm;
@@ -912,7 +927,10 @@ reindex(struct tm *tm, char *bbspath, int flags, int nrposts)
 
 		switch (art->format) {
 		case MARKDOWN:
-		    markdown(mkd_string(art->body, art->size, MKD_NOHEADER), iFb, 0);
+		    doc = mkd_string(art->body, art->size, MKD_NOHEADER);
+		    if ( fmt.base )
+			mkd_basename(doc, fmt.base);
+		    markdown(doc, iFb, 0);
 		    break;
 		default:
 		    if (q=memchr(art->body, '\f', art->size)) {

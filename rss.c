@@ -143,6 +143,7 @@ rss2post(FILE *f, struct article *art)
     int print = 1;
     int size;
     time_t *timep;
+    MMIOT *doc;
 
     timep = (art->modified != art->timeofday) ? &(art->modified)
 					      : &(art->timeofday);
@@ -163,7 +164,10 @@ rss2post(FILE *f, struct article *art)
     fprintf(f, "    <description>");
     switch ( art->format ) {
     case MARKDOWN:
-	markdown(mkd_string(art->body, art->size, MKD_NOHEADER), f, MKD_CDATA);
+	doc = mkd_string(art->body, art->size, MKD_NOHEADER);
+	if ( fmt.base )
+	    mkd_basename(doc, fmt.base);
+	markdown(doc, f, MKD_CDATA);
 	break;
     default:
 	ffilter(f, art->body, art->size);
@@ -217,6 +221,7 @@ atompost(FILE *f, struct article *art)
     char *q;
     int print = 1;
     int size;
+    MMIOT *doc;
 
     strftime(tod, sizeof tod,
 		"%Y-%m-%dT%H:%M:%SZ", gmtime(&(art->timeofday)));
@@ -231,10 +236,16 @@ atompost(FILE *f, struct article *art)
 	       "    <link rel=\"alternate\" type=\"text/html\" href=\"%s/%s\" />\n",
 		    fmt.url, art->url);
     fprintf(f, "    <id>%s/%s</id>\n", fmt.url, art->url);
-    fprintf(f, "    <content type=\"html\" xml:lang=\"en-us\"  xml:base=\"%s\">\n", fmt.url);
+    fprintf(f, "    <content type=\"html\" xml:lang=\"en-us\"");
+    if ( fmt.base )
+	fprintf(f, " xml:base=\"%s/\"", fmt.base);
+    fprintf(f, ">\n");
     switch ( art->format ) {
     case MARKDOWN:
-	markdown(mkd_string(art->body, art->size, MKD_NOHEADER), f, MKD_CDATA);
+	doc = mkd_string(art->body, art->size, MKD_NOHEADER);
+	if ( fmt.base ) 
+	    mkd_basename(doc, fmt.base);
+	markdown(doc, f, MKD_CDATA);
 	break;
     default:
 	fprintf(f, "    <![CDATA[");

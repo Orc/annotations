@@ -85,12 +85,12 @@ if [ -z "$MARKDOWN" ]; then
     AC_FAIL "Cannot find markdown";
 fi
 
-MVERSION=`$MARKDOWN -V | tr -dc '[0-9.]'`
+MVERSION=`$MARKDOWN -V | awk '{print $3}' `
 
 if [ -z "$MVERSION" ]; then
     AC_FAIL "$MARKDOWN -V does not return sensible output?"
 fi
-expr "$MVERSION" '>=' '0.9.1' || AC_FAIL "markdown must be >= version 0.9.1"
+expr "$MVERSION" '>=' '1.2.0' || AC_FAIL "markdown must be >= version 1.2.0"
 
 AC_CHECK_FIELD dirent d_namlen sys/types.h dirent.h
 

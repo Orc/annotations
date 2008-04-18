@@ -12,6 +12,7 @@ struct fmt {
     char *name;			/* name of the weblog */
     char *homepage;		/* what page it lives at */
     char *filter;		/* postprocessing filter */
+    char *base;			/* base url (machine-name part of url or nothing) */
     char *url;			/* url for the weblog */
     char *author;		/* author for the weblog */
     char *about;		/* one line description of the weblog */
@@ -22,12 +23,12 @@ struct fmt {
     struct markup article;	/* markup around an article in index.html */
     struct markup body;		/* markup around the body of an article */
     struct markup title;	/*  "  "   " "       subject      " " */
-    struct markup byline;	/*  "  "   " "       byline      " " */
     struct markup chapter;	/*  "  "   " "  the date header in index.html */
     struct markup post;
     struct markup edit;
     struct markup comment;
     struct markup archive;
+    char * byline;		/* What's in the byline? */
     char *separator;		/* what to separate articles with */
     char *commentsep;		/* what to separate comments with */
     char *readmore;		/* ``Read more...'' or similar text */
