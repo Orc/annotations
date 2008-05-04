@@ -22,7 +22,9 @@ typedef struct article {
     long   size;	/* size of article body */
     char  *author;	/* author (from control file) */
     time_t timeofday;	/* when written ( " " ) */
+    struct tm ctime;	/* timeofday, expanded */
     time_t modified;	/* when last changed ( " " ) */
+    struct tm mtime;	/* modified, expanded */
     char  *path;
     char  *title;
     char  *category;

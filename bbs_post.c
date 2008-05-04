@@ -184,14 +184,17 @@ putbody(FILE *f)
     fputs("</FORM>\n", f);
 
     if (help)
-	fputs("<DIV ALIGN=LEFT><HR>\n"
-	      " *text* <b>boldfaces</b> text; \n"
-	      " _text_ <i>italicizes</i> text; \n"
-	      " blank line starts a new paragraph; \n"
-	      " {pic:url} displays the picture at url<br>\n"
-	      " {url}{title} makes <b>title</b> a"
-	      " link to <b>url</b><br>\n"
-	      "</DIV>", f);
+	fputs("<div align=left><hr>\n"
+	      "<ul>"
+	      "<li>paragraphs are separated by blank lines;</li>\n"
+	      "<li>to blockquote, start the line with &gt;</li>"
+	      "<li>*text* <i>italicizes</i> text;</li>"
+	      "<li>**text** <b>boldfaces</b> text;</li>"
+	      "<li>`text` becomes &lt;code>text&lt;/code></li>"
+	      "<li>[title][url] makes &lt;a href=url>title&gt;/a></li>"
+	      "<li>![title][img] makes &lt;img src=img alt=title></li>"
+	      "</ul>"
+	      "</div>", f);
 }
 
 
@@ -295,7 +298,7 @@ main(int argc, char **argv)
 		if ( fork() )
 		    exit(0);
 		chdir(bbspath);
-		execl("post/after.post", "after.post", 0);
+		execl("post/after.post", "after.post", editing ? "EDIT" : "POST", art->url, 0);
 		exit(0);
 	    }
 	}

@@ -5,8 +5,10 @@
 #include <unistd.h>
 #include <sys/file.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <assert.h>
 
 #include <mkdio.h>
 
@@ -90,6 +92,7 @@ openart(char *pathto)
     char *txt, *ctl;
     char *opt;
     Cstring line;
+    struct tm *tm;
     FILE *f;
     ARTICLE *ret = newart();
 
@@ -124,8 +127,12 @@ openart(char *pathto)
 	case 'A':   ret->author = strdup(opt);
 		    break;
 	case 'W':   ret->timeofday = atol(opt);
+		    if ( tm = localtime(&ret->timeofday) )
+			ret->ctime = *tm;
 		    break;
 	case 'M':   ret->modified = atol(opt);
+		    if ( tm = localtime(&ret->modified) )
+			ret->mtime = *tm;
 		    break;
 	case 'T':   ret->title = strdup(opt);
 		    break;
@@ -296,51 +303,140 @@ freeart(ARTICLE* a)
 int saveart(ARTICLE*);			/* save and close an article */
 
 
-#if TESTING
+char *
+get_article_theme()
+{
+    FILE *fd;
+    char *q = 0;
+    char *text;
+    int len;
+    MMIOT *doc;
+
+    if ( fd = fopen("article.theme", "r") ) {
+	doc = mkd_in(fd, 0);
+	fclose(fd);
+	if ( doc ) {
+	    if ( mkd_compile(doc, 0) && (len = mkd_document(doc, &text)) )
+		if ( q = calloc(1, len+1) )
+		    memcpy(q, text, len);
+	    mkd_cleanup(doc);
+	}
+
+    }
+
+    if ( !q ) 
+	q =  strdup("<h2><a href=\"$url\">$title</a></h2>\n"
+		    "<p>Posted $date by $author "
+			    "(<a href=\"$url\">permalink</a></p>\n"
+		    "$text\n");
+    assert(q != 0);
+    return q;
+}
+
+
+void
+discard_article_theme(char *theme)
+{
+    if ( theme )
+	free(theme);
+}
+
+
+static int
+match(char **input, char *pat)
+{
+    int len = strlen(pat);
+
+    if ( (strncmp(*input,pat,len) == 0) && !isalnum((*input)[len]) ) {
+	*input += len;
+	return 1;
+    }
+    return 0;
+}
+
 int
-printart(ARTICLE *a, FILE *f)
+pdate(struct tm *tm, char *format, FILE *out, int embed)
+{
+    char bfr[200];
+
+    strftime(bfr, sizeof bfr, format, tm);
+    if ( embed ) 
+	mkd_text(bfr, strlen(bfr), out, 0);
+    else
+	markdown(mkd_string(bfr, strlen(bfr), 0), out, 0);
+}
+
+int
+printheader(ARTICLE *a, int first, FILE *f)
+{
+    static int dy;
+
+    if ( first ) dy = -1;
+
+    if ( dy != a->ctime.tm_mday ) {
+	dy = a->ctime.tm_mday;
+	pdate(&a->ctime, "#%A, %B %d %Y#", f, 0);
+    }
+    else
+	markdown(mkd_string("---",3,0), f, 0);
+}
+
+
+int
+printart(ARTICLE *a, char *theme, FILE *f)
 {
     char *time;
     MMIOT *doc;
+    FILE *th = fopen("article.theme", "r");
+    char bfr[80];
+    int i, c;
 
-    if ( a ) {
-	fputs("<div class=article>\n", f);
+    fprintf(f, "<div class=article>\n");
+    while ( (c = *theme++) ) {
+	if ( ((c == '%') && (strncmp(theme, "24", 2) == 0)) || (c == '$') ) {
+	    if ( c == '%' )
+		theme += 2;
 
-	if ( a->title ) {
-	    fputs("<H3>", f);
-	    mkd_text(a->title, strlen(a->title), f, 0);
-	    fputs("</H3>\n", f);
+	    if ( match(&theme, "title") )
+		mkd_text(a->title, strlen(a->title), f, 0);
+	    else if ( match(&theme, "text") )
+		markdown(mkd_string(a->body, a->size, MKD_NOHEADER),f,0);
+	    else if ( match(&theme, "date") )
+		pdate(&a->ctime, "%I:%m %p %A, %B %d %Y", f, 1);
+	    else if ( match(&theme, "url") )
+		fwrite(a->url, strlen(a->url), 1, f);
+	    else if ( match(&theme, "author") )
+		mkd_text(a->author, strlen(a->author), f, 0);
+	    else if ( match(&theme, "comments") ) {
+		char bfr[80];
+
+		if ( a->comments ) {
+		    snprintf(bfr, sizeof bfr, "%d comment%s", a->comments, (a->comments!=1) ? "s" : "");
+		    mkd_text(bfr, strlen(bfr), f, 0);
+		}
+		else
+		    mkd_text("Comment?", 8, f, 0);
+	    }
+	    else
+		fputs( (c=='$') ? "$" : "%24", f);
 	}
-
-	if ( a->body && a->size ) {
-	    fputs("<div class=body>\n", f);
-	    markdown(mkd_string(a->body,a->size, MKD_NOHEADER),f,0);
-	    fputs("</div>\n", f);
-	}
-	if ( a->author ) {
-	    fputs("<p class=author>\n", f);
-	    mkd_text(a->author, strlen(a->author), f, 0);
-	    fputc(' ', f);
-	    time = ctime(&a->timeofday);
-	    mkd_text(time, strlen(time), f, 0);
-	    fputs("</p>\n", f);
-	}
-
-	fputs("</div>\n", f);
+	else
+	    fputc(c, f);
     }
+    fprintf(f, "</div>\n");
 }
-#endif
 
 
 #if TESTING
 main(argc,argv)
 char **argv;
 {
+    char *theme;
     char *webroot = ".";
     int count = 10;
     Articles list;
     ARTICLE *art;
-    int i;
+    int i, first;
 
     switch ( argc ) {
     default:	count = atoi(argv[2]);
@@ -354,18 +450,26 @@ char **argv;
 	exit(1);
     }
 
+    theme = get_article_theme();
+
     CREATE(list);
     everypost(count,&list);
 
-    for (i=0; i < S(list); i++) {
+    theme = get_article_theme();
+
+    for (i=0, first=1; i < S(list); i++) {
 	if ( art=openart(T(list)[i]) ) {
-	    printart(art, stdout);
+	    printheader(art, first, stdout);
+	    printart(art, theme, stdout);
 	    freeart(art);
+	    first=0;
 	}
 	else
 	    perror(T(list)[i]);
     }
 
     DELETE(list);
+
+    discard_article_theme(theme);
 }
 #endif
