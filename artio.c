@@ -450,8 +450,6 @@ char **argv;
 	exit(1);
     }
 
-    theme = get_article_theme();
-
     CREATE(list);
     everypost(count,&list);
 

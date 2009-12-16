@@ -2,7 +2,7 @@ CC=@CC@ -L.
 LIBS=@LIBS@ -lmarkdown
 
 LIBOBJS=articles.o format.o indexer.o initialize.o mapfile.o post.o \
-	readconfig.o rewrite.o rss.o theme.o xgetenv.o version.o
+	readconfig.o rewrite.o rss.o theme.o xgetenv.o version.o @UNCGI@
 LIBA=libannot.a
 
 PGMS=post reindex comment @XMLPOST@
@@ -31,9 +31,7 @@ comment: comment.o $(LIBA)
 	$(CC) $(CFLAGS) -o $@ comment.o $(LIBA) $(LIBS)
 
 version.c: VERSION
-	echo -n "char VERSION[] = \"" > version.c
-	echo -n `cat VERSION`        >> version.c
-	echo "\";"                   >> version.c
+	echo "char VERSION[] = \"`cat VERSION`\";" > version.c
 
 install_:
 	true

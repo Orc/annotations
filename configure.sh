@@ -150,8 +150,8 @@ rm -f $$.c $$.o
 
 AC_CHECK_HEADERS libgen.h
 
-test -d "$AC_WWWDIR" || AC_FAIL "Cannot find web directory $AC_WWWDIR"
-test -d "$AC_CGIDIR" || AC_FAIL "Cannot find CGI directory $AC_CGIDIR"
+test -d "$AC_WWWDIR" || LOG "Cannot find web directory $AC_WWWDIR"
+test -d "$AC_CGIDIR" || LOG "Cannot find CGI directory $AC_CGIDIR"
 
 AC_SUB EXEC_PREFIX ${EXEC_PREFIX}
 AC_SUB EXEC_SUFFIX ${EXEC_SUFFIX}
