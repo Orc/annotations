@@ -6,6 +6,7 @@
 #include "mapfile.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <string.h>
@@ -75,23 +76,23 @@ readconfig(char *path)
     fmt.name          = "";
     fmt.homepage      = "index.html";
     fmt.filter        = 0;
-    fmt.chapter.start = "<H2 CLASS=chapter>";
-    fmt.chapter.end   = "</H2>";
-    fmt.article.start = "<div CLASS=article>";
+    fmt.chapter.start = "<h2 class=\"chapter\">";
+    fmt.chapter.end   = "</h2>";
+    fmt.article.start = "<div class=\"article\">";
     fmt.article.end   = "</div>";
-    fmt.title.start   = "<H3 CLASS=title>";
-    fmt.title.end     = "</H3>";
+    fmt.title.start   = "<h3 class=\"title\">";
+    fmt.title.end     = "</h3>";
     fmt.byline        = "&mdash;%A %D";
-    fmt.body.start    = "<div CLASS=body>";
+    fmt.body.start    = "<div class=\"body\">";
     fmt.body.end      = "</div>";
-    fmt.post.start    = "<h4 CLASS=post>";
+    fmt.post.start    = "<h4 class=\"post\">";
     fmt.post.end      = "</h4>";
-    fmt.edit.start    = "<p CLASS=edit>";
+    fmt.edit.start    = "<p class=\"edit\">";
     fmt.edit.end      = "</p>";
-    fmt.archive.start = "<hr CLASS=archive><h2 CLASS=archive>Archives</h2>";
-    fmt.comment.start = "<p CLASS=commentbutton>";
+    fmt.archive.start = "<hr class=\"archive\"><h2 class=\"archive\">Archives</h2>";
+    fmt.comment.start = "<p class=\"commentbutton\">";
     fmt.comment.end   = "</p>";
-    fmt.commentsep    = "<hr>";
+    fmt.commentsep    = "<hr/>";
     fmt.separator     = "";
     fmt.nrposts       = 10;
     fmt.readmore      = "Read More...";

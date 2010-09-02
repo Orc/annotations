@@ -107,7 +107,7 @@ archivepage()
 		fprintf(f, "<ul class=archive>\n");
 	    }
 	    strftime(ftime, sizeof ftime, "%B %Y", &tm);
-	    fprintf(f, "  <li><A HREF=\"%s%04d/%02d/index.html\">%s</A>\n",
+	    fprintf(f, "  <li><a href=\"%s%04d/%02d/index.html\">%s</a></li>\n",
 		    bbsroot, tm.tm_year+1900, tm.tm_mon+1, ftime);
 	}
 	if (count > 0 && !fmt.simplearchive)

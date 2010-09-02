@@ -54,18 +54,18 @@ bbs_error(int code, char *why)
     syslog(LOG_ERR, "%m");
 
     prefix(script);
-    puts("<HTML>\n"
-	 "<META NAME=\"ROBOTS\" CONTENT=\"NOINDEX,NOFOLLOW\">"
-	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
-	 "<BODY BGCOLOR=black>\n"
-         "<CENTER><FONT COLOR=RED>OH, NO!<BR>\n");
-    printf("ERROR CODE %d<BR>\n", code);
+    puts("<html>\n"
+	 "<meta name=\"robots\" content=\"noindex,nofollow\">"
+	 "<head><title>Aaaaiieee!</title></head>\n"
+	 "<body bgcolor=black>\n"
+         "<center><font color=red>OH, NO!<br>\n");
+    printf("ERROR CODE %d<br>\n", code);
     if (code == 503)
 	puts(strerror(err));
     else
 	puts(why);
-    puts("</FONT></CENTER>\n"
-         "</BODY></HTML>");
+    puts("</font></center>\n"
+         "</body></html>");
     exit(1);
 }
 
@@ -76,7 +76,7 @@ putbody(FILE *f)
     int rows;
     char *p;
 
-    fputs("<DIV CLASS=\"postwindow\">\n", f);
+    fputs("<div class=\"postwindow\">\n", f);
 
     if (fillin) {
 	fprintf(f, "<p>Please enter your name, email or website,\n");
@@ -87,42 +87,42 @@ putbody(FILE *f)
 		    text ? strlen(text) : 0);
 
     if ( preview && text && (strlen(text) > 1) ) {
-	fputs("<DIV CLASS=\"previewbox\">\n", f);
+	fputs("<div class=\"previewbox\">\n", f);
 	markdown(mkd_string(text,strlen(text), MKD_NOHEADER),f,0);
-	fputs("</DIV>\n"
-	      "<HR>\n", f);
+	fputs("</div>\n"
+	      "<hr/>\n", f);
 	rows=10;
     }
     else {
 	rows=24;
     }
 
-    fprintf(f, "<FORM METHOD=POST ACTION=\"%s\">\n", script);
-    fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", url);
-    fprintf(f, "<DIV align=left CLASS=\"Name\">Name"
-	       "<INPUT TYPE=TEXT NAME=\"name\" SIZE=40 MAXLENGTH=180"
-	       " VALUE=\"%s\">\n", name ? name : "");
+    fprintf(f, "<form method=\"post\" action=\"%s\">\n", script);
+    fprintf(f, "<input type=\"hidden\" name=\"url\" value=\"%s\"/>\n", url);
+    fprintf(f, "<div align=\"left\" class=\"Name\">Name"
+	       "<input type=\"text\" name=\"name\" size=40 maxlength=180"
+	       " value=\"%s\">\n", name ? name : "");
     if (fillin && !name)
-	fprintf(f, " <font CLASS=alert>Please enter your name</font>\n");
-    fprintf(f, "<br><DIV align=left CLASS=\"Email\">Email"
-	       "<INPUT TYPE=TEXT NAME=\"email\" SIZE=40 MAXLENGTH=180"
-	       " VALUE=\"%s\">\n", email ? email : "");
+	fprintf(f, " <font class=alert>Please enter your name</font>\n");
+    fprintf(f, "<br><div align=\"left\" class=\"Email\">Email"
+	       "<input type=\"text\" name=\"email\" size=\"40\" maxlength=\"180\""
+	       " value=\"%s\">\n", email ? email : "");
     if (fillin && !email)
-	fprintf(f, " <font CLASS=alert>Please enter your email address</font>\n");
-    fprintf(f, "<INPUT TYPE=CHECKBOX NAME=publish_mail %s>&nbsp;publish your email address?\n", publish_mail  ? "CHECKED" : "");
-    fprintf(f, "<br><DIV align=left CLASS=\"URL\">Website "
-	       "<INPUT TYPE=TEXT NAME=\"website\" SIZE=40 MAXLENGTH=180"
-	       " VALUE=\"%s\">\n", website ? website : "");
+	fprintf(f, " <font class=alert>Please enter your email address</font>\n");
+    fprintf(f, "<input type=\"checkbox\" name=\"publish_mail\" %s/>&nbsp;publish your email address?\n", publish_mail  ? "CHECKED" : "");
+    fprintf(f, "<div align=\"left\" class=\"URL\">Website "
+	       "<input type=\"text\" name=\"website\" size=\"40\" maxlength=\"180\""
+	       " value=\"%s\">\n", website ? website : "");
     /*
     if (fillin && !email)
-	fprintf(f, " <font CLASS=alert>Please enter your website</font>\n");
+	fprintf(f, " <font class=alert>Please enter your website</font>\n");
      */
 
     if (fillin && !text)
-	fprintf(f, "<br><p CLASS=alert>Please enter a message</p>\n");
-    fprintf(f, "<br><DIV CLASS=\"inputbox\">\n"
-	       "<FONT BGCOLOR=silver>\n"
-	       "<TEXTAREA NAME=_text ROWS=%d COLS=80 WRAP=SOFT>\n",rows);
+	fprintf(f, "<br><p class=\"alert\">Please enter a message</p>\n");
+    fprintf(f, "<br><div class=\"inputbox\">\n"
+	       "<font bgcolor=\"silver\">\n"
+	       "<textarea name=\"_text\" rows=\"%d\" cols=\"80\" wrap=\"soft\">\n",rows);
 
     if (text)
 	for (p=text; *p; ++p)
@@ -131,30 +131,30 @@ putbody(FILE *f)
 	    else
 		fputc(*p, f);
     
-    fputs("</TEXTAREA></FONT></DIV>\n", f);
+    fputs("</textarea></font></div>\n", f);
 
-    fputs("<DIV ALIGN=LEFT CLASS=\"controls\">\n", f);
+    fputs("<div align=\"left\" class=\"controls\">\n", f);
 
     if (preview)
-	fprintf(f, "<INPUT TYPE=HIDDEN NAME=preview VALUE=Preview>\n");
-    fprintf(f, "<INPUT TYPE=SUBMIT NAME=preview VALUE=Preview>\n"
-	       "<INPUT TYPE=SUBMIT NAME=post VALUE=Post>\n"
-	       "<INPUT TYPE=SUBMIT NAME=cancel VALUE=Cancel>\n");
+	fprintf(f, "<input type=\"hidden\" name=\"preview\" value=\"Preview\"/>\n");
+    fprintf(f, "<input type=\"submit\" name=\"preview\" value=\"Preview\"/>\n"
+	       "<input type=\"submit\" name=\"post\" value=\"Post\"/>\n"
+	       "<input type=\"submit\" name=\"cancel\" value=\"Cancel\"/>\n");
 
     if (help)
-	fprintf(f, "<INPUT TYPE=HIDDEN NAME=help VALUE=\"Show\">\n");
-    fprintf(f, "<INPUT TYPE=SUBMIT NAME=help VALUE=\"%s\">\n",
+	fprintf(f, "<input type=\"hidden\" name=\"help\" value=\"Show\"/>\n");
+    fprintf(f, "<input type=\"submit\" name=\"help\" value=\"%s\"/>\n",
 		help ? "Hide Help" : "Show Help");
 
-    fputs("</DIV>\n"
-	  "</FORM>\n", f);
+    fputs("</div>\n"
+	  "</form>\n", f);
 
     if (help)
-	fputs("<DIV CLASS=\"helpbox\" ALIGN=LEFT><HR>\n"
+	fputs("<div class=\"helpbox\" align=\"left\"><hr/>\n"
 	      " *text* <b>boldfaces</b> text; \n"
 	      " _text_ <i>italicizes</i> text; \n"
 	      " a blank line starts a new paragraph\n"
-	      "</DIV>", f);
+	      "</div>", f);
 }
 
 
@@ -264,7 +264,7 @@ main(int argc, char **argv, char **envp)
 	    case 2:
 		prefix(script);
 		puts("<html>");
-		printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s%s\">\n", bbsroot, url);
+		printf("<meta http-equiv=\"Refresh\" content=\"0; url=%s%s\">\n", bbsroot, url);
 		puts("</html>");
 		exit(0);
 	    case 1:
@@ -273,7 +273,7 @@ main(int argc, char **argv, char **envp)
 		       "<head>\n"
 		       "<title>your comment is being held by "
 		              "the moderator</title>\n"
-		       "<meta http-equiv=refresh content=\"5; URL=%s%s\">\n"
+		       "<meta http-equiv=refresh content=\"5; url=%s%s\">\n"
 		       "</head>\n", bbsroot, url);
 		printf("<body>\n"
 		       "<p>Your comment is being held for moderation, "
@@ -297,7 +297,7 @@ main(int argc, char **argv, char **envp)
     else if (getenv("WWW_cancel")) {
 	prefix(script);
 	puts("<html>");
-	printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%s%s\">\n", bbsroot,url);
+	printf("<meta http-equiv=\"Refresh\" content=\"0; url=%s%s\">\n", bbsroot,url);
 	puts("</html>");
 	exit(0);
     }

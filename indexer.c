@@ -90,14 +90,14 @@ putindex(FILE *f)
     }
 
     if (state == POST) {
-	fprintf(f, "<FORM METHOD=GET ACTION=\"post.cgi\">\n");
+	fprintf(f, "<form method=\"get\" action=\"post.cgi\">\n");
 	fputs(fmt.post.start, f);
-	fprintf(f, "<INPUT TYPE=SUBMIT NAME=post VALUE=\"New Message\">\n");
+	fprintf(f, "<input type=\"submit\" name=\"post\" value=\"New Message\" />\n");
 	fputs(fmt.post.end, f);
-	fprintf(f, "</FORM>\n");
-	fprintf(f, "<FORM METHOD=GET ACTION=\"reindex.cgi\">\n");
-	fprintf(f, "<INPUT TYPE=SUBMIT NAME=yes VALUE=\"regenerate pages\">\n");
-	fprintf(f, "</FORM>\n");
+	fprintf(f, "</form>\n");
+	fprintf(f, "<form method=\"get\" action=\"reindex.cgi\">\n");
+	fprintf(f, "<input type=\"submit\" name=\"yes\" value=\"regenerate pages\" />\n");
+	fprintf(f, "</form>\n");
 	fputs(fmt.separator, f);
     }
 
@@ -137,45 +137,45 @@ putindex(FILE *f)
 	    }
 
 	    if (readmore) {
-		fprintf(f, "<P CLASS=\"readmore\">"
-			   "<A HREF=%s/%s>", home, url);
+		fprintf(f, "<p class=\"readmore\">"
+			   "<a href=%s/%s>", home, url);
 		fputs(fmt.readmore, f);
-		fputs("</A></P>\n", f);
+		fputs("</a></p>\n", f);
 	    }
 
 	    if ( (state == POST) && url ) {
-		fprintf(f, "<FORM METHOD=GET ACTION=\"post.cgi\">\n");
+		fprintf(f, "<form method=\"get\" action=\"post.cgi\">\n");
 		fputs(fmt.edit.start, f);
-		fprintf(f, "<INPUT TYPE=SUBMIT NAME=edit VALUE=Edit>\n");
-		fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", url);
+		fprintf(f, "<input type=\"submit\" name=\"edit\" VALUE=\"Edit\" />\n");
+		fprintf(f, "<input type=\"hidden\" name=\"url\" VALUE=\"%s\" />\n", url);
 		fputs(fmt.edit.end, f);
-		fprintf(f, "</FORM>\n");
+		fprintf(f, "</form>\n");
 	    }
 
 	    if ( !(url && home) )
 		continue;
 
 	    if (comments_ok) {
-		fprintf(f, "<FORM METHOD=GET ACTION=\"%s", home);
+		fprintf(f, "<form method=\"get\" action=\"%s", home);
 		if ( comments > 0 )
 		    fputs(url, f);
 		else
 		    fputs("comment", f);
 		fprintf(f, "\">\n");
 		fputs(fmt.comment.start, f);
-		fprintf(f, "<INPUT TYPE=SUBMIT NAME=comment VALUE=\"");
+		fprintf(f, "<input type=\"submit\" name=\"comment\" value=\"");
 		if ( comments > 0 )
 		    fprintf(f, "%d comment%s", comments, (comments!=1)?"s":"");
 		else
 		    fprintf(f, "Comment?");
-		fprintf(f, "\">\n");
-		fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", url);
+		fprintf(f, "\" />\n");
+		fprintf(f, "<input type=\"hidden\" name=\"url\" value=\"%s\" />\n", url);
 		fputs(fmt.comment.end, f);
-		fprintf(f, "</FORM>\n");
+		fprintf(f, "</form>\n");
 	    }
 	    else if (comments > 0) {
 		fputs(fmt.comment.start, f);
-		fprintf(f, "<A HREF=\"%s%s\">%d comment%s</A>\n",
+		fprintf(f, "<a href=\"%s%s\">%d comment%s</a>\n",
 			    home, url, comments, (comments!=1)?"s":"");
 		fputs(fmt.comment.end,f);
 	    }
@@ -574,9 +574,10 @@ writemsg(struct article *art)
 static void
 alink(FILE *f, char *pfx, char *sfx, char *line, char *end)
 {
-    fprintf(f, "%s<a href=%s/",pfx, fmt.url);
+    fprintf(f, "%s<a href=\"%s/",pfx, fmt.url);
     while (*line != ':' && line < end)
 	putc(*line++, f);
+    putc('"', f);
     putc('>', f);
     if (*line == ':') {
 	++line;
@@ -702,12 +703,12 @@ puthtml(FILE *f)
 	munmap(text,size);
     }
     else
-	fprintf(f, "<P class=Error>Ooops! mmap %s</P>\n",strerror(errno));
+	fprintf(f, "<p class=\"Error\">Ooops! mmap %s</p>\n",strerror(errno));
     if (!fmt.topsig) byline(f,htmlart, 0);
 
 
     if (htmlart->comments > 0) {
-	fprintf(f, "<P class=CommentHeader>Comments<hr></P>\n");
+	fprintf(f, "<p class=\"CommentHeader\">Comments<hr/></p>\n");
 	if (text = mapfile(htmlart->cmtfile, &size)) {
 	    fwrite(text,size,1,f);
 	    munmap(text,size);
@@ -720,7 +721,7 @@ puthtml(FILE *f)
 	    sprintf(cf, "%s/%s", htmlart->cmtdir, say[i]->d_name);
 	    if ( c = opencomment(cf) ) {
 		if (c->approved) {
-		    fprintf(f, "<A NAME=%d>\n</A><DIV CLASS=\"comment\">\n", i);
+		    fprintf(f, "<a name=\"%d\">\n</a><div class=\"comment\">\n", i);
 
 		    if (firstcomment)
 			firstcomment = 0;
@@ -728,8 +729,8 @@ puthtml(FILE *f)
 			fputs(fmt.commentsep, f);
 
 		    markdown(mkd_string(c->text, strlen(c->text), MKD_NOHEADER), f, c->linksok ? 0 : MKD_NOLINKS|MKD_NOIMAGE);
-		    fprintf(f, "</DIV>\n");
-		    fprintf(f, "<DIV CLASS=\"commentsig\">\n");
+		    fprintf(f, "</div>\n");
+		    fprintf(f, "<div class=\"commentsig\">\n");
 
 		    if (c->website) {
 			if (!strncasecmp(c->website, "http://", 7))
@@ -745,7 +746,7 @@ puthtml(FILE *f)
 		    else
 			fprintf(f, "%s ", c->author);
 		    fputs(ctime( &(c->when) ), f);
-		    fprintf(f, "</DIV>\n");
+		    fprintf(f, "</div>\n");
 		}
 		freecomment(c);
 	    }
@@ -753,19 +754,19 @@ puthtml(FILE *f)
     }
     if (htmlart->comments_ok) {
 	fprintf(f, "<!-- comment input -->\n");
-	fprintf(f, "<FORM METHOD=GET ACTION=\"%scomment\">\n",
+	fprintf(f, "<form method=\"get\" action=\"%scomment\">\n",
 		    fetch("_ROOT"));
 	fputs(fmt.comment.start, f);
 	if (htmlart->comments > 0)
-	    fprintf(f, "<INPUT TYPE=SUBMIT NAME=comment VALUE=\"Another Comment?\">\n");
+	    fprintf(f, "<input type=\"submit\" name=\"comment\" value=\"Another Comment?\" />\n");
 	else
-	    fprintf(f, "<INPUT TYPE=SUBMIT NAME=comment VALUE=\"Comment?\">\n");
-	fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", htmlart->url);
+	    fprintf(f, "<input type=\"submit\" name=\"comment\" value=\"Comment?\" />\n");
+	fprintf(f, "<input type=\"hidden\" name=\"url\" value=\"%s\" />\n", htmlart->url);
 	fputs(fmt.comment.end, f);
-	fprintf(f, "</FORM>\n");
+	fprintf(f, "</form>\n");
     }
     else if (htmlart->comments > 0)
-	fprintf(f, "<P class=CommentHeader>Comments are closed</P>\n");
+	fprintf(f, "<p class=\"CommentHeader\">Comments are closed</p>\n");
 
     return 1;
 }

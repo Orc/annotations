@@ -27,7 +27,7 @@ initialize()
     static char username[41];
     struct passwd *pwd;
 
-    if ( (getuid() == WEB_UID) && (getgid() == WEB_GID) ) {
+    if ( (getuid() == WEB_UID) /*&& (getgid() == WEB_GID)*/ ) {
 	/* called by the web user; use SCRIPT_NAME to find
 	 * out who we should be.
 	 */
