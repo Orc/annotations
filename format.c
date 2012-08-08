@@ -53,6 +53,7 @@ byline(FILE *f, struct article *art, int with_url)
 	else
 	    putc(*r, f);
     }
+    fprintf(f, "</p>\n");
 }
 
 

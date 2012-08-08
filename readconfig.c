@@ -6,6 +6,7 @@
 #include "mapfile.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <string.h>
@@ -76,23 +77,52 @@ readconfig(char *path)
     fmt.name          = "";
     fmt.homepage      = "index.html";
     fmt.filter        = 0;
+<<<<<<< HEAD:readconfig.c
     fmt.chapter.start = "<h2 class=chapter>";
+=======
+    fmt.chapter.start = "<h2 class=\"chapter\">";
+>>>>>>> 2fd86a46881bfdc04ef9150978078361dd38b010:readconfig.c
     fmt.chapter.end   = "</h2>";
+<<<<<<< HEAD:readconfig.c
     fmt.article.start = "<div class=article>";
+=======
+    fmt.article.start = "<div class=\"article\">";
+>>>>>>> 2fd86a46881bfdc04ef9150978078361dd38b010:readconfig.c
     fmt.article.end   = "</div>";
+<<<<<<< HEAD:readconfig.c
     fmt.title.start   = "<h3 class=title>";
+=======
+    fmt.title.start   = "<h3 class=\"title\">";
+>>>>>>> 2fd86a46881bfdc04ef9150978078361dd38b010:readconfig.c
     fmt.title.end     = "</h3>";
     fmt.byline        = "&mdash;%A %D";
+<<<<<<< HEAD:readconfig.c
     fmt.body.start    = "<div class=body>";
+=======
+    fmt.body.start    = "<div class=\"body\">";
+>>>>>>> 2fd86a46881bfdc04ef9150978078361dd38b010:readconfig.c
     fmt.body.end      = "</div>";
+<<<<<<< HEAD:readconfig.c
     fmt.post.start    = "<h4 class=post>";
+=======
+    fmt.post.start    = "<h4 class=\"post\">";
+>>>>>>> 2fd86a46881bfdc04ef9150978078361dd38b010:readconfig.c
     fmt.post.end      = "</h4>";
+<<<<<<< HEAD:readconfig.c
     fmt.edit.start    = "<p class=edit>";
+=======
+    fmt.edit.start    = "<p class=\"edit\">";
+>>>>>>> 2fd86a46881bfdc04ef9150978078361dd38b010:readconfig.c
     fmt.edit.end      = "</p>";
+<<<<<<< HEAD:readconfig.c
     fmt.archive.start = "<hr class=archive><h2 class=archive>Archives</h2>";
     fmt.comment.start = "<p class=commentbutton>";
+=======
+    fmt.archive.start = "<hr class=\"archive\"><h2 class=\"archive\">Archives</h2>";
+    fmt.comment.start = "<p class=\"commentbutton\">";
+>>>>>>> 2fd86a46881bfdc04ef9150978078361dd38b010:readconfig.c
     fmt.comment.end   = "</p>";
-    fmt.commentsep    = "<hr>";
+    fmt.commentsep    = "<hr/>";
     fmt.separator     = "";
     fmt.nrposts       = 10;
     fmt.readmore      = "Read More...";

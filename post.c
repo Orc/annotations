@@ -26,13 +26,13 @@ addcomments(FILE *f, struct article *art)
 	munmap(com, size);
     }
     if (art->comments_ok) {
-	fprintf(f, "<FORM METHOD=GET ACTION=\"%scomment\">\n",
+	fprintf(f, "<form method=\"get\" action=\"%scomment\">\n",
 		    fetch("_ROOT"));
 	fputs(fmt.comment.start, f);
-	fprintf(f, "<INPUT TYPE=SUBMIT NAME=comment VALUE=Comment>\n");
-	fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\">\n", art->url);
+	fprintf(f, "<input type=\"submit\" name=\"comment\" value=\"Comment\" />\n");
+	fprintf(f, "<input type=\"hidden\" name=\"url\" value=\"%s\" />\n", art->url);
 	fputs(fmt.comment.end, f);
-	fprintf(f, "</FORM>\n");
+	fprintf(f, "</form>\n");
     }
 }
 

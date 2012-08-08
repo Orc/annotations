@@ -108,7 +108,6 @@ archivepage()
 		if ( thismonth && thismonth <= 12 )
 		    monthtab[thismonth-1] = 1;
 	    }
-
 	    if ( verbose ) {
 		fprintf(stderr, "for %s:", years[year]->d_name);
 		for (i=0; i < 12; i++) {

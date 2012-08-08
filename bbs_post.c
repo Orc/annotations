@@ -48,7 +48,7 @@ static void
 showvalue(char *text, FILE *f)
 {
     if (text) {
-	fprintf(f, " VALUE=\"");
+	fprintf(f, " value=\"");
 	for ( ;*text; ++text) {
 	    switch (*text) {
 	    case '&':
@@ -64,7 +64,7 @@ showvalue(char *text, FILE *f)
 	}
 	fputc('"', f);
     }
-    fputs(">\n", f);
+    fputs("/>\n", f);
 }
 
 
@@ -74,7 +74,7 @@ bbs_error(int code, char *why)
     int err = errno;
 
     if (code/100 == 5)
-	syslog(LOG_ERR, "%m");
+	syslog(LOG_ERR, "%m: %s", why);
     else
 	syslog(LOG_ERR, "%d: %s", code, why);
 
@@ -84,17 +84,17 @@ bbs_error(int code, char *why)
 	   "Cache-Control: no-cache\r\n"
 	   "\r\n", script);
 
-    puts("<HTML>\n"
-	 "<HEAD><TITLE>Aaaaiieee!</TITLE></HEAD>\n"
-	 "<BODY BGCOLOR=black>\n"
-         "<CENTER><FONT COLOR=RED>OH, NO!<BR>");
-    printf("ERROR CODE %d<BR>\n", code);
+    puts("<html>\n"
+	 "<head><title>Aaaaiieee!</title></head>\n"
+	 "<body bgcolor=black>\n"
+         "<center><font color=red>OH, NO!<br>");
+    printf("error code %d<br>\n", code);
     if (code/100 == 5)
 	puts(strerror(err));
     else
 	puts(why);
-    puts("</FONT></CENTER>\n"
-         "</BODY></HTML>");
+    puts("</font></center>\n"
+         "</body></html>");
     exit(1);
 }
 
@@ -107,28 +107,28 @@ putbody(FILE *f)
 {
     char *t;
 
-    fputs("<DIV CLASS=\"postwindow\">\n", f);
+    fputs("<div class=\"postwindow\">\n", f);
     if ( (editing||preview) && (art->size > 1)) {
-	fputs("<DIV CLASS=\"previewbox\">\n", f);
+	fputs("<div class=\"previewbox\">\n", f);
 	article(f, art);
-	fputs("</DIV>\n"
-	      "<HR>\n", f);
+	fputs("</div>\n"
+	      "<hr/>\n", f);
 	rows=10;
     }
     else {
 	rows=24;
     }
 
-    fprintf(f, "<FORM METHOD=POST ACTION=\"%s\">\n", script);
-    fputs("<DIV align=left CLASS=\"subjectbox\">Subject <INPUT TYPE=TEXT NAME=\"title\" SIZE=80 MAXLENGTH=180", f);
+    fprintf(f, "<form method=post action=\"%s\">\n", script);
+    fputs("<div align=left class=\"subjectbox\"/>Subject <input type=text name=\"title\" size=80 maxlength=180", f);
     showvalue(art->title, f);
 
     if (complain && !art->title)
 	fputs("<font class=\"alert\">Please enter a subject</font>\n", f);
-    fputs("<BR></DIV>\n", f);
+    fputs("<br></div>\n", f);
 
-    fprintf(f, "<DIV CLASS=\"inputbox\">\n"
-	       "<TEXTAREA NAME=_text ROWS=%d COLS=80 WRAP=SOFT>\n",rows);
+    fprintf(f, "<div class=\"inputbox\">\n"
+	       "<textarea name=\"_text\" rows=\"%D\" cols=\"80\" wrap=\"soft\">\n",rows);
 
     if (art->body)
 	for (p=art->body; *p; ++p)
@@ -141,50 +141,50 @@ putbody(FILE *f)
 	    else
 		fputc(*p, f);
     
-    fputs("</TEXTAREA></FONT>\n", f);
+    fputs("</textarea></font>\n", f);
     if (complain && !art->body)
-	fputs("<BR><font class=\"alert\">Please enter a message</font>\n", f);
-    fputs("</DIV>\n", f);
+	fputs("<br><font class=\"alert\">Please enter a message</font>\n", f);
+    fputs("</div>\n", f);
 
-    fputs("<DIV CLASS=\"tags\">Category <INPUT TYPE=TEXT NAME=\"category\" SIZE=80 MAXLENGTH=180", f);
+    fputs("<div class=\"tags\"/>Category <input type=text name=\"category\" size=80 maxlength=180", f);
     showvalue(art->category, f);
 
-    fputs("<DIV ALIGN=LEFT CLASS=\"checkbox\">\n"
+    fputs("<div align=\"left\" class=\"checkbox\">\n"
 	  "Allow&nbsp;comments"
-	  "<INPUT TYPE=\"checkbox\" NAME=\"commentsok\"",f);
+	  "<input type=\"checkbox\" name=\"commentsok\"",f);
     if (comments_ok)
 	fputs(" checked", f);
-    fputs("></DIV>\n",f);
+    fputs("/></div>\n",f);
 
-    fputs("<DIV ALIGN=LEFT CLASS=\"controls\">\n", f);
-    fprintf(f, "<INPUT TYPE=HIDDEN NAME=comments value=%d>\n", art->comments);
+    fputs("<div align=\"left\" class=\"controls\">\n", f);
+    fprintf(f, "<input type=\"hidden\" name=\"comments\" value=\"%d\" />\n", art->comments);
 
     if (preview || editing)
-	fprintf(f,"<INPUT TYPE=HIDDEN NAME=previewing VALUE=T>\n");
+	fprintf(f,"<input type=\"hidden\" name=\"previewing\" value=\"T\" />\n");
 
     if (editing) {
-	fprintf(f, "<INPUT TYPE=HIDDEN NAME=edit VALUE=edit>\n");
-	fprintf(f, "<INPUT TYPE=HIDDEN NAME=url VALUE=\"%s\"\n", art->url);
+	fprintf(f, "<input type=\"hidden\" name=\"edit\" value=\"edit\" />\n");
+	fprintf(f, "<input type=\"hidden\" name=\"url\" value=\"%s\" />\n", art->url);
     }
-    fprintf(f, "<INPUT TYPE=HIDDEN NAME=more VALUE=more>\n");
+    fprintf(f, "<input type=\"hidden\" name=\"more\" value=\"more\"/>\n");
 
-    fprintf(f, "<INPUT TYPE=SUBMIT NAME=preview VALUE=Preview>\n"
-	       "<INPUT TYPE=SUBMIT NAME=post VALUE=%s>\n"
-	       "<INPUT TYPE=SUBMIT NAME=cancel VALUE=Cancel>\n",
+    fprintf(f, "<input type=\"submit\" name=\"preview\" value=\"Preview\"/>\n"
+	       "<input type=\"submit\" name=\"post\" value=\"%s\"/>\n"
+	       "<input type=\"submit\" name=\"cancel\" value=\"Cancel\"/>\n",
 	       editing ? "Save" : "Post");
-    fputs("</DIV>", f);
+    fputs("</div>", f);
 
     if (editing)
 	help = 0;
     else
-	fprintf(f, "<INPUT TYPE=SUBMIT NAME=%s VALUE=\"%s\">\n",
+	fprintf(f, "<input type=\"submit\" name=\"%s\" value=\"%s\"/>\n",
 			    help ? "nohelp" : "needhelp",
 			    help ? "Hide Help" : "Show Help");
 
-    fputs("</FORM>\n", f);
+    fputs("</form>\n", f);
 
     if (help)
-	fputs("<div align=left><hr>\n"
+	fputs("<div align=left><hr/>\n"
 	      "<ul>"
 	      "<li>paragraphs are separated by blank lines;</li>\n"
 	      "<li>to blockquote, start the line with &gt;</li>"
@@ -209,6 +209,8 @@ main(int argc, char **argv)
 
     openlog("bbs_post", LOG_PID, LOG_NEWS);
 
+    syslog(LOG_ERR, "ZERO");
+
     if ( (argc > 1) && (strcmp(argv[1], "-e")) == 0) {
 	argc--;
 	argv++;
@@ -219,6 +221,7 @@ main(int argc, char **argv)
 
     uncgi();
 
+    syslog(LOG_ERR, "ONE");
     script = xgetenv("SCRIPT_NAME");
 
     if ( (author = xgetenv("REMOTE_USER")) == 0)
@@ -227,6 +230,7 @@ main(int argc, char **argv)
     if ( (text = xgetenv("WWW_text")) && (*text == 0) )
 	text = 0;
 
+    syslog(LOG_ERR, "TWO");
     preview = boolenv("WWW_previewing") | boolenv("WWW_preview");
     title = xgetenv("WWW_title");
     category = xgetenv("WWW_category");
@@ -284,7 +288,7 @@ main(int argc, char **argv)
 		       "Cache-Control: no-cache\r\n"
 		       "\r\n", script ? script :"core.dump");
 		puts("<html>");
-		printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%spost\">\n", bbsroot ? bbsroot : "core.dump");
+		printf("<meta http-equiv=\"Refresh\" content=\"0; url=%spost\">\n", bbsroot ? bbsroot : "core.dump");
 		printf("<html><head><title>article %s</title></head>",
 			editing ? "updated" : "posted");
 		printf("<body><p>The article has been %s.  If your web browser "
@@ -311,7 +315,7 @@ main(int argc, char **argv)
 	       "Cache-Control: no-cache\r\n"
 	       "\r\n", script);
 	puts("<html>");
-	printf("<meta http-equiv=\"Refresh\" Content=\"0; URL=%spost\">\n", bbsroot);
+	printf("<meta http-equiv=\"Refresh\" content=\"0; url=%spost\">\n", bbsroot);
 	printf("<head><title>%s cancelled</title></head>",
 		editing ? "edit" : "post");
 	printf("<body><p>%s cancelled.  If your web browser\n"

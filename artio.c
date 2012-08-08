@@ -391,7 +391,7 @@ printart(ARTICLE *a, char *theme, FILE *f)
     char bfr[80];
     int i, c;
 
-    fprintf(f, "<div class=article>\n");
+    fprintf(f, "<div class=\"article\">\n");
     while ( (c = *theme++) ) {
 	if ( ((c == '%') && (strncmp(theme, "24", 2) == 0)) || (c == '$') ) {
 	    if ( c == '%' )
