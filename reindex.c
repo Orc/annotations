@@ -76,6 +76,7 @@ archivepage()
     int years, months;
     int count;
     int total=0;
+    int monthtab[12];
     struct tm tm;
     char ftime[80];
     FILE *f;
@@ -97,13 +98,25 @@ archivepage()
 	    fprintf(stderr, "months for %s = %d\n",years[year]->d_name, months);
 
 	if ( fmt.calendararchive ) {
-	    char monthtab[12];
 	    int i;
 	    
-	    memset(monthtab, sizeof monthtab, 0);
+	    for (i=0; i < 12; i++)
+		monthtab[i] = 0;
 
-	    for (i=0; i<months; i++)
-		monthtab[atoi(month[months]->d_name)-1] = 1;
+	    for (i=0; i<months; i++) {
+		int thismonth = atoi(month[i]->d_name);
+		if ( thismonth && thismonth <= 12 )
+		    monthtab[thismonth-1] = 1;
+	    }
+
+	    if ( verbose ) {
+		fprintf(stderr, "for %s:", years[year]->d_name);
+		for (i=0; i < 12; i++) {
+		    if ( monthtab[i] )
+			fprintf(stderr, " %d", i);
+		}
+		fprintf(stderr, "\n");
+	    }
 	    
 	    fprintf(f, "<table class=\"archive\">\n");
 	    fprintf(f, "<caption>%s</caption>\n", year[years]->d_name);
