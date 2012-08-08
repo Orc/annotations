@@ -20,6 +20,7 @@ struct fmt {
     int topsig;			/* signature at the start of a post? */
     int linktitle;		/* titles are also used as permlinks */
     int simplearchive;		/* do the archive as a list body */
+    int calendararchive;	/* do the archive as month calendar */
     struct markup article;	/* markup around an article in index.html */
     struct markup body;		/* markup around the body of an article */
     struct markup title;	/*  "  "   " "       subject      " " */
