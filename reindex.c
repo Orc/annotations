@@ -96,22 +96,54 @@ archivepage()
 	if (verbose)
 	    fprintf(stderr, "months for %s = %d\n",years[year]->d_name, months);
 
-	for (count=0; months-- > 0; ++count) {
-	    tm.tm_year = atoi(year[years]->d_name)-1900;
-	    tm.tm_mon  = atoi(month[months]->d_name)-1;
-	    if (! (count || fmt.simplearchive) ) {
-		if ( total++ == 0 )
-		    fprintf(f, "%s\n", fmt.archive.start);
+	if ( fmt.calendararchive ) {
+	    char monthtab[12];
+	    int i;
+	    
+	    memset(monthtab, sizeof monthtab, 0);
 
-		fprintf(f, "<h3 class=archive>%s</h3>\n", year[years]->d_name);
-		fprintf(f, "<ul class=archive>\n");
+	    for (i=0; i<months; i++)
+		monthtab[atoi(month[months]->d_name)-1] = 1;
+	    
+	    fprintf(f, "<table class=\"archive\">\n");
+	    fprintf(f, "<caption>%s</caption>\n", year[years]->d_name);
+
+	    for ( count=0; count < 12; count++ ) {
+		if ( count % 4 == 0 )
+		    fprintf(f, "  <tr>\n");
+		if ( monthtab[count] ) {
+		    tm.tm_mon = count;
+		    strftime(ftime, sizeof ftime, "%b", &tm);
+		    fprintf(f, "<td><a href=\"%s%s/%02d/index.html\">%.3s</a>\n",
+				bbsroot, year[years]->d_name, count+1, ftime);
+		}
+		else
+		    fprintf(f, "<td>&nbsp;</td>\n");
+		
+		if ( count % 4 == 3 )
+		    fprintf(f, "  </tr>\n");
 	    }
-	    strftime(ftime, sizeof ftime, "%B %Y", &tm);
-	    fprintf(f, "  <li><A HREF=\"%s%04d/%02d/index.html\">%s</A>\n",
-		    bbsroot, tm.tm_year+1900, tm.tm_mon+1, ftime);
+	    fprintf(f, "</table>\n");
 	}
-	if (count > 0 && !fmt.simplearchive)
-	    fprintf(f, "</ul>\n");
+	else {
+	    for (count=0; months-- > 0; ++count) {
+		tm.tm_year = atoi(year[years]->d_name)-1900;
+		tm.tm_mon  = atoi(month[months]->d_name)-1;
+		if (! (count || fmt.simplearchive) ) {
+		    if ( total++ == 0 )
+			fprintf(f, "%s\n", fmt.archive.start);
+
+		    fprintf(f, "<h3 class=archive>%s</h3>\n",
+					year[years]->d_name);
+		    fprintf(f, "<ul class=archive>\n");
+		}
+		strftime(ftime, sizeof ftime, "%B %Y", &tm);
+		fprintf(f, "  <li><A HREF=\"%s%04d/%02d/index.html\">%s</A>\n",
+			bbsroot, tm.tm_year+1900, tm.tm_mon+1, ftime);
+	    }
+	    if (count > 0 && !fmt.simplearchive)
+		fprintf(f, "</ul>\n");
+	}
     }
     rclose(f);
 }
