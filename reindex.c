@@ -123,15 +123,17 @@ archivepage()
 	    for ( count=0; count < 12; count++ ) {
 		if ( count % 4 == 0 )
 		    fprintf(f, "  <tr>\n");
+		fprintf(f, "<td>");
 		if ( monthtab[count] ) {
 		    tm.tm_mon = count;
 		    strftime(ftime, sizeof ftime, "%b", &tm);
-		    fprintf(f, "<td><a href=\"%s%s/%02d/index.html\">%.3s</a>\n",
+		    fprintf(f, "<a href=\"%s%s/%02d/index.html\">%.3s</a>",
 				bbsroot, year[years]->d_name, count+1, ftime);
 		}
 		else
-		    fprintf(f, "<td>&nbsp;</td>\n");
+		    fprintf(f, "&thinsp;&ensp;&ensp;&ensp;");
 		
+		fprintf(f, "</td>\n");
 		if ( count % 4 == 3 )
 		    fprintf(f, "  </tr>\n");
 	    }
