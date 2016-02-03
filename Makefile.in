@@ -37,13 +37,13 @@ install_:
 	true
 
 install_xmlpost:
-	@INSTALL@ -m 6711 -o 0 -g 0 xmlpost $(CGIDIR)/@EXEC_PREFIX@xmlpost@EXEC_SUFFIX@
+	@INSTALL@ -m 6755 -o 0 -g 0 xmlpost $(CGIDIR)/@EXEC_PREFIX@xmlpost@EXEC_SUFFIX@
 
 install: install_@XMLPOST@ $(PGMS) $(CGIDIR)
-	@INSTALL@ -m 6711 -o 0 -g 0 post $(CGIDIR)/@EXEC_PREFIX@post@EXEC_SUFFIX@
-	@INSTALL@ -m 6711 -o 0 -g 0 comment $(CGIDIR)/@EXEC_PREFIX@comment@EXEC_SUFFIX@
-	@INSTALL@ -m 6711 -o 0 -g 0 reindex $(CGIDIR)/@EXEC_PREFIX@reindex@EXEC_SUFFIX@
-	@INSTALL@ -m 6711 -o 0 -g 0 reindex $(EXEDIR)/@EXEC_PREFIX@reindex
+	@INSTALL@ -m 6755 -o 0 -g 0 post $(CGIDIR)/@EXEC_PREFIX@post@EXEC_SUFFIX@
+	@INSTALL@ -m 6755 -o 0 -g 0 comment $(CGIDIR)/@EXEC_PREFIX@comment@EXEC_SUFFIX@
+	@INSTALL@ -m 6755 -o 0 -g 0 reindex $(CGIDIR)/@EXEC_PREFIX@reindex@EXEC_SUFFIX@
+	@INSTALL@ -m 6755 -o 0 -g 0 reindex $(EXEDIR)/@EXEC_PREFIX@reindex
 	@INSTALL@ -m 755  -o 0 -g 0 setup.weblog $(EXEDIR)
 	-@INSTALL_DATA@  annotations.7 @mandir@/man7
 	-@INSTALL_DATA@  weblog.conf.5 @mandir@/man5
