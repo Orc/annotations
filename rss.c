@@ -153,7 +153,7 @@ rss2post(FILE *f, struct article *art)
 	       "  <item>\n"
 	       "    <title>");
 
-    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE|MKD_CDATA);
+    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE|FMT_FLAGS|MKD_CDATA);
     fprintf(f,"</title>\n"
 	       "    <link>%s/%s</link>\n"
 	       "    <guid isPermaLink=\"true\">%s/%s</guid>\n"
@@ -164,10 +164,10 @@ rss2post(FILE *f, struct article *art)
     fprintf(f, "    <description>");
     switch ( art->format ) {
     case MARKDOWN:
-	doc = mkd_string(art->body, art->size, MKD_NOHEADER);
+	doc = mkd_string(art->body, art->size, MKD_NOHEADER|FMT_FLAGS);
 	if ( fmt.base )
 	    mkd_basename(doc, fmt.base);
-	markdown(doc, f, MKD_CDATA);
+	markdown(doc, f, MKD_CDATA|FMT_FLAGS);
 	break;
     default:
 	ffilter(f, art->body, art->size);
@@ -231,7 +231,7 @@ atompost(FILE *f, struct article *art)
     fprintf(f, "\n"
 	       "  <entry>\n"
 	       "    <title type=\"html\">");
-    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE|MKD_CDATA);
+    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE|MKD_CDATA|FMT_FLAGS);
     fprintf(f,"</title>\n"
 	       "    <link rel=\"alternate\" type=\"text/html\" href=\"%s/%s\" />\n",
 		    fmt.url, art->url);
@@ -242,10 +242,10 @@ atompost(FILE *f, struct article *art)
     fprintf(f, ">\n");
     switch ( art->format ) {
     case MARKDOWN:
-	doc = mkd_string(art->body, art->size, MKD_NOHEADER);
+	doc = mkd_string(art->body, art->size, MKD_NOHEADER|FMT_FLAGS);
 	if ( fmt.base ) 
 	    mkd_basename(doc, fmt.base);
-	markdown(doc, f, MKD_CDATA);
+	markdown(doc, f, MKD_CDATA|FMT_FLAGS);
 	break;
     default:
 	fprintf(f, "    <![CDATA[");

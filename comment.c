@@ -88,7 +88,7 @@ putbody(FILE *f)
 
     if ( preview && text && (strlen(text) > 1) ) {
 	fputs("<div class=\"previewbox\">\n", f);
-	markdown(mkd_string(text,strlen(text), MKD_NOHEADER),f,0);
+	markdown(mkd_string(text,strlen(text), MKD_NOHEADER|FMT_FLAGS),f,0);
 	fputs("</div>\n"
 	      "<hr/>\n", f);
 	rows=10;

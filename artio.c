@@ -400,7 +400,7 @@ printart(ARTICLE *a, char *theme, FILE *f)
 	    if ( match(&theme, "title") )
 		mkd_text(a->title, strlen(a->title), f, 0);
 	    else if ( match(&theme, "text") )
-		markdown(mkd_string(a->body, a->size, MKD_NOHEADER),f,0);
+		markdown(mkd_string(a->body, a->size, MKD_NOHEADER|FMT_FLAGS),f,0);
 	    else if ( match(&theme, "date") )
 		pdate(&a->ctime, "%I:%m %p %A, %B %d %Y", f, 1);
 	    else if ( match(&theme, "url") )

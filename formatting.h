@@ -38,4 +38,6 @@ struct fmt {
 void getconfig();
 extern struct fmt fmt;
 
+#define FMT_FLAGS	MKD_DLEXTRA|MKD_FENCEDCODE
+
 #endif/*__FORMATTING_D*/
