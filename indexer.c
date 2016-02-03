@@ -581,7 +581,7 @@ alink(FILE *f, char *pfx, char *sfx, char *line, char *end)
     putc('>', f);
     if (*line == ':') {
 	++line;
-	mkd_text(line,end-line, f, MKD_NOLINKS|MKD_NOIMAGE);
+	mkd_text(line,end-line, f, MKD_NOLINKS|MKD_NOIMAGE|FMT_FLAGS);
     }
     fprintf(f, "</a>%s\n",sfx);
 }
@@ -689,10 +689,10 @@ puthtml(FILE *f)
 	fprintf(f, "<!-- message -->\n");
 	switch (htmlart->format) {
 	case MARKDOWN:
-	    doc = mkd_string(text,size, MKD_NOHEADER);
+	    doc = mkd_string(text,size, MKD_NOHEADER|FMT_FLAGS);
 	    if ( fmt.base )
 		mkd_basename(doc, fmt.base);
-	    markdown(mkd_string(text, size, MKD_NOHEADER), f, 0);
+	    markdown(mkd_string(text, size, MKD_NOHEADER|FMT_FLAGS), f, 0);
 	    break;
 	default:
 	    for (count=size, p = text; count>0; --count, ++p)
@@ -728,7 +728,7 @@ puthtml(FILE *f)
 		    else
 			fputs(fmt.commentsep, f);
 
-		    markdown(mkd_string(c->text, strlen(c->text), MKD_NOHEADER), f, c->linksok ? 0 : MKD_NOLINKS|MKD_NOIMAGE);
+		    markdown(mkd_string(c->text, strlen(c->text), MKD_NOHEADER|FMT_FLAGS), f, FMT_FLAGS | (c->linksok ? 0 : MKD_NOLINKS|MKD_NOIMAGE) );
 		    fprintf(f, "</div>\n");
 		    fprintf(f, "<div class=\"commentsig\">\n");
 
@@ -928,7 +928,7 @@ reindex(struct tm *tm, char *bbspath, int flags, int nrposts)
 
 		switch (art->format) {
 		case MARKDOWN:
-		    doc = mkd_string(art->body, art->size, MKD_NOHEADER);
+		    doc = mkd_string(art->body, art->size, MKD_NOHEADER|FMT_FLAGS);
 		    if ( fmt.base )
 			mkd_basename(doc, fmt.base);
 		    markdown(doc, iFb, 0);

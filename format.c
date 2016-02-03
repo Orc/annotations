@@ -66,7 +66,7 @@ subject(FILE *f, struct article *art, int oktolink)
 	fputs(fmt.title.start, f);
 	if (oktolink && fmt.linktitle && (p = fetch("_ROOT")) )
 	    fprintf(f,"<a href=\"%s%s\">\n", p, art->url);
-	mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE);
+	mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE|FMT_FLAGS);
 	if (oktolink && fmt.linktitle && p)
 	    fprintf(f, "</a>\n");
 	fputs(fmt.title.end, f);
@@ -87,7 +87,7 @@ article(FILE *f, struct article *art, int flags)
 	fputs(fmt.body.start, f);
 	switch ( art->format ) {
 	case MARKDOWN:
-		doc = mkd_string(art->body,art->size, MKD_NOHEADER);
+		doc = mkd_string(art->body,art->size, MKD_NOHEADER|FMT_FLAGS);
 		if ( fmt.base )
 		    mkd_basename(doc, fmt.base);
 		markdown(doc, f, 0);
