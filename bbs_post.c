@@ -113,10 +113,10 @@ putbody(FILE *f)
 	article(f, art);
 	fputs("</div>\n"
 	      "<hr/>\n", f);
-	rows=10;
+	rows=16;
     }
     else {
-	rows=24;
+	rows=30;
     }
 
     fprintf(f, "<form method=post action=\"%s\">\n", script);
@@ -128,7 +128,7 @@ putbody(FILE *f)
     fputs("<br></div>\n", f);
 
     fprintf(f, "<div class=\"inputbox\">\n"
-	       "<textarea name=\"_text\" rows=\"%D\" cols=\"80\" wrap=\"soft\">\n",rows);
+	       "<textarea name=\"_text\" rows=\"%d\" cols=\"80\" wrap=\"soft\">\n",rows);
 
     if (art->body)
 	for (p=art->body; *p; ++p)
