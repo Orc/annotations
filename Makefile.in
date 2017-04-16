@@ -1,5 +1,7 @@
-CC=@CC@ -L.
-LIBS=@LIBS@ -lmarkdown
+CC=@CC@
+LIBS=@LIBS@
+CFLAGS=@CFLAGS@
+LDFLAGS=@LDFLAGS@
 
 LIBOBJS=articles.o format.o indexer.o initialize.o mapfile.o post.o \
 	readconfig.o rewrite.o rss.o theme.o xgetenv.o version.o @UNCGI@
@@ -16,19 +18,19 @@ $(LIBA): $(LIBOBJS)
 	ranlib $(LIBA)
 
 post: bbs_post.o $(LIBA)
-	$(CC) $(CFLAGS) -o $@ bbs_post.o $(LIBA) $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ bbs_post.o $(LIBA) $(LIBS)
 
 xmlpost: xmlpost.o $(LIBA)
-	$(CC) $(CFLAGS) -o $@ xmlpost.o $(LIBA) $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ xmlpost.o $(LIBA) $(LIBS)
 
 reindex: reindex.o $(LIBA)
-	$(CC) $(CFLAGS) -o $@ reindex.o $(LIBA) $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ reindex.o $(LIBA) $(LIBS)
 
 reindex.o: reindex.c
 	$(CC) $(CFLAGS) -c reindex.c $(LIBA)
 
 comment: comment.o $(LIBA)
-	$(CC) $(CFLAGS) -o $@ comment.o $(LIBA) $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ comment.o $(LIBA) $(LIBS)
 
 version.c: VERSION
 	echo "char VERSION[] = \"`cat VERSION`\";" > version.c
