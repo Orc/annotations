@@ -79,18 +79,29 @@ AC_INIT $TARGET
 
 AC_PROG_CC
 
-MARKDOWN=`acLookFor markdown`
+AC_LIBRARY mkd_compile -lmarkdown || AC_FAIL "$TARGET needs discount"
 
-if [ -z "$MARKDOWN" ]; then
-    AC_FAIL "Cannot find markdown";
+cat > ngc$$.c << EOF
+#include <stdio.h>
+#include <mkdio.h>
+
+main()
+{
+    puts(markdown_version);
+}
+EOF
+
+if $AC_CC $AC_CFLAGS $AC_LDFLAGS -o ngc$$ ngc$$.c $LIBS; then
+    MARKDOWN=`./ngc$$`
+    rm -f ngc$$ ngc$$.c
+else
+    rm ngc$$.c
+    AC_FAIL "Can't get the discount version from -lmarkdown"
 fi
 
-MVERSION=`$MARKDOWN -V | awk '{print $3}' `
+LOG "markdown version $MARKDOWN"
 
-if [ -z "$MVERSION" ]; then
-    AC_FAIL "$MARKDOWN -V does not return sensible output?"
-fi
-expr "$MVERSION" '>=' '1.2.0' || AC_FAIL "markdown must be >= version 1.2.0"
+expr "$MARKDOWN" '>=' '1.2.0' || AC_FAIL "markdown must be >= version 1.2.0"
 
 AC_CHECK_FIELD dirent d_namlen sys/types.h dirent.h
 
