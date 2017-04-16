@@ -78,6 +78,16 @@ TARGET=annotations
 AC_INIT $TARGET
 
 AC_PROG_CC
+unset _MK_LIBRARIAN
+
+case "$AC_CC $AC_CFLAGS" in
+*-pedantic*)    ;;
+*)		AC_DEFINE 'while(x)' 'while( (x) != 0 )'
+		AC_DEFINE 'if(x)' 'if( (x) != 0 )'
+		if [ "$IS_BROKEN_CC" ]; then
+		    AC_CFLAGS="$AC_CFLAGS -Wno-implicit-int"
+		fi ;;
+esac
 
 AC_LIBRARY mkd_compile -lmarkdown || AC_FAIL "$TARGET needs discount"
 
