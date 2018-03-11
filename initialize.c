@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <syslog.h>
+
 extern char *bbspath, *bbsroot;
 
 /*
@@ -34,6 +36,7 @@ initialize()
 	if ( (p = getenv("SCRIPT_NAME")) == 0)
 	    bbs_error(500, "run from the webserver, but SCRIPT_NAME not set");
 
+syslog(LOG_INFO, "SCRIPT_NAME=%s", p);
 	if ( (p[0] == '/') && (p[1] == '~') ) {
 	    p += 2;
 	    strncpy(username, p, sizeof username - 1);

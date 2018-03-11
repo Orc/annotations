@@ -194,6 +194,19 @@ putsccs(FILE *f)
 
 
 /*
+ * <?theme version?>
+ */
+static void
+putversion(FILE *f)
+{
+    extern char VERSION[];
+    extern char markdown_version[];
+    
+    fprintf(f, "annotations %s (markdown %s)", VERSION, markdown_version);
+}
+
+
+/*
  * <?theme [file]?>
  */
 static void
@@ -227,6 +240,7 @@ struct op {
     { "cwd",     putcwd },
     { "root",    putroot },
     { "sccs",    putsccs },
+    { "version", putversion },
 };
 #define NR_OPS	(sizeof operations/sizeof operations[0])
 

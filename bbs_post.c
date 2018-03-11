@@ -128,7 +128,7 @@ putbody(FILE *f)
     fputs("<br></div>\n", f);
 
     fprintf(f, "<div class=\"inputbox\">\n"
-	       "<textarea name=\"_text\" rows=\"%d\" cols=\"80\" wrap=\"soft\">\n",rows);
+	       "<textarea class=\"inputtext\" rows=\"%d\" name=\"_text\" wrap=\"soft\">\n", rows);
 
     if (art->body)
 	for (p=art->body; *p; ++p)

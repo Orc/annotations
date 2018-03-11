@@ -1,7 +1,5 @@
-CC=@CC@
-LIBS=@LIBS@
-CFLAGS=@CFLAGS@
-LDFLAGS=@LDFLAGS@
+CC=@CC@ -L.
+LIBS=@LIBS@ -lmarkdown
 
 LIBOBJS=articles.o format.o indexer.o initialize.o mapfile.o post.o \
 	readconfig.o rewrite.o rss.o theme.o xgetenv.o version.o @UNCGI@
@@ -18,19 +16,19 @@ $(LIBA): $(LIBOBJS)
 	ranlib $(LIBA)
 
 post: bbs_post.o $(LIBA)
-	$(CC) $(LDFLAGS) -o $@ bbs_post.o $(LIBA) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ bbs_post.o $(LIBA) $(LIBS)
 
 xmlpost: xmlpost.o $(LIBA)
-	$(CC) $(LDFLAGS) -o $@ xmlpost.o $(LIBA) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ xmlpost.o $(LIBA) $(LIBS)
 
 reindex: reindex.o $(LIBA)
-	$(CC) $(LDFLAGS) -o $@ reindex.o $(LIBA) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ reindex.o $(LIBA) $(LIBS)
 
 reindex.o: reindex.c
 	$(CC) $(CFLAGS) -c reindex.c $(LIBA)
 
 comment: comment.o $(LIBA)
-	$(CC) $(LDFLAGS) -o $@ comment.o $(LIBA) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ comment.o $(LIBA) $(LIBS)
 
 version.c: VERSION
 	echo "char VERSION[] = \"`cat VERSION`\";" > version.c
@@ -39,7 +37,7 @@ install_:
 	true
 
 install_xmlpost:
-	@INSTALL@ -m 6755 -o 0 -g 0 xmlpost $(CGIDIR)/@EXEC_PREFIX@xmlpost@EXEC_SUFFIX@
+	@INSTALL@ -m 6711 -o 0 -g 0 xmlpost $(CGIDIR)/@EXEC_PREFIX@xmlpost@EXEC_SUFFIX@
 
 install: install_@XMLPOST@ $(PGMS) $(CGIDIR)
 	@INSTALL@ -m 6755 -o 0 -g 0 post $(CGIDIR)/@EXEC_PREFIX@post@EXEC_SUFFIX@

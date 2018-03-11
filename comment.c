@@ -60,10 +60,11 @@ bbs_error(int code, char *why)
 	 "<body bgcolor=black>\n"
          "<center><font color=red>OH, NO!<br>\n");
     printf("ERROR CODE %d<br>\n", code);
-    if (code == 503)
+    if (code == 503) {
 	puts(strerror(err));
-    else
-	puts(why);
+	puts("<br/>");
+    }
+    puts(why);
     puts("</font></center>\n"
          "</body></html>");
     exit(1);
