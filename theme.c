@@ -202,7 +202,7 @@ putversion(FILE *f)
     extern char VERSION[];
     extern char markdown_version[];
     
-    fprintf(f, "annotations %s (markdown %s)", VERSION, markdown_version);
+    fprintf(f, "annotations %s, markdown %s", VERSION, markdown_version);
 }
 
 
