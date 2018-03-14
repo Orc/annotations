@@ -30,4 +30,5 @@ to claim it as your own work.
 I include a copy of Steven Koresh's uncgi program, which is also released
 under a BSD-style license.  (look at uncgi/uncgi.c for the details)
 
-The file INSTALL describes how to build and install postoffice
+The file INSTALL describes how to build and install this horrible
+bodge of a program.
