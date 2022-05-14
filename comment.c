@@ -76,6 +76,10 @@ putbody(FILE *f)
 {
     int rows;
     char *p;
+    mkd_flag_t *flags = mkd_flags();
+
+
+    mkd_set_flag_num(flags, MKD_NOHEADER);
 
     fputs("<div class=\"postwindow\">\n", f);
 
@@ -89,7 +93,7 @@ putbody(FILE *f)
 
     if ( preview && text && (strlen(text) > 1) ) {
 	fputs("<div class=\"previewbox\">\n", f);
-	markdown(mkd_string(text,strlen(text), MKD_NOHEADER|FMT_FLAGS),f,0);
+	markdown(mkd_string(text,strlen(text), flags),f,0);
 	fputs("</div>\n"
 	      "<hr/>\n", f);
 	rows=10;
@@ -156,6 +160,8 @@ putbody(FILE *f)
 	      " _text_ <i>italicizes</i> text; \n"
 	      " a blank line starts a new paragraph\n"
 	      "</div>", f);
+
+    mkd_free_flags(flags);
 }
 
 

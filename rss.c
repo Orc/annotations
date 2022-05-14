@@ -144,6 +144,13 @@ rss2post(FILE *f, struct article *art)
     int size;
     time_t *timep;
     MMIOT *doc;
+    mkd_flag_t *flags = mkd_flags();
+
+    mkd_set_flag_num(flags, MKD_NOLINKS);
+    mkd_set_flag_num(flags, MKD_NOIMAGE);
+    mkd_set_flag_num(flags, MKD_CDATA);
+    mkd_set_flag_num(flags, MKD_DLEXTRA);
+    mkd_set_flag_num(flags, MKD_FENCEDCODE);
 
     timep = (art->modified != art->timeofday) ? &(art->modified)
 					      : &(art->timeofday);
@@ -153,7 +160,7 @@ rss2post(FILE *f, struct article *art)
 	       "  <item>\n"
 	       "    <title>");
 
-    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE|FMT_FLAGS|MKD_CDATA);
+    mkd_text(art->title, strlen(art->title), f, flags);
     fprintf(f,"</title>\n"
 	       "    <link>%s/%s</link>\n"
 	       "    <guid isPermaLink=\"true\">%s/%s</guid>\n"
@@ -164,10 +171,12 @@ rss2post(FILE *f, struct article *art)
     fprintf(f, "    <description>");
     switch ( art->format ) {
     case MARKDOWN:
-	doc = mkd_string(art->body, art->size, MKD_NOHEADER|FMT_FLAGS);
+	mkd_clr_flag_num(flags, MKD_NOLINKS);
+	mkd_clr_flag_num(flags, MKD_NOIMAGE);
+	doc = mkd_string(art->body, art->size, flags);
 	if ( fmt.base )
 	    mkd_basename(doc, fmt.base);
-	markdown(doc, f, MKD_CDATA|FMT_FLAGS);
+	markdown(doc, f, flags);
 	break;
     default:
 	ffilter(f, art->body, art->size);
@@ -176,6 +185,8 @@ rss2post(FILE *f, struct article *art)
     /*fprintf(f, "]]></description>\n");*/
     fprintf(f, "</description>\n");
     fprintf(f, "  </item>\n");
+
+    mkd_free_flags(flags);
 }
 
 
@@ -222,6 +233,13 @@ atompost(FILE *f, struct article *art)
     int print = 1;
     int size;
     MMIOT *doc;
+    mkd_flag_t *flags;
+
+    mkd_set_flag_num(flags, MKD_NOLINKS);
+    mkd_set_flag_num(flags, MKD_NOIMAGE);
+    mkd_set_flag_num(flags, MKD_DLEXTRA);
+    mkd_set_flag_num(flags, MKD_FENCEDCODE);
+    mkd_set_flag_num(flags, MKD_CDATA);
 
     strftime(tod, sizeof tod,
 		"%Y-%m-%dT%H:%M:%SZ", gmtime(&(art->timeofday)));
@@ -231,7 +249,7 @@ atompost(FILE *f, struct article *art)
     fprintf(f, "\n"
 	       "  <entry>\n"
 	       "    <title type=\"html\">");
-    mkd_text(art->title, strlen(art->title), f, MKD_NOLINKS|MKD_NOIMAGE|MKD_CDATA|FMT_FLAGS);
+    mkd_text(art->title, strlen(art->title), f, flags);
     fprintf(f,"</title>\n"
 	       "    <link rel=\"alternate\" type=\"text/html\" href=\"%s/%s\" />\n",
 		    fmt.url, art->url);
@@ -242,10 +260,16 @@ atompost(FILE *f, struct article *art)
     fprintf(f, ">\n");
     switch ( art->format ) {
     case MARKDOWN:
-	doc = mkd_string(art->body, art->size, MKD_NOHEADER|FMT_FLAGS);
+	mkd_clr_flag_num(flags, MKD_NOLINKS);
+	mkd_clr_flag_num(flags, MKD_NOIMAGE);
+	mkd_clr_flag_num(flags, MKD_CDATA);
+	mkd_set_flag_num(flags, MKD_NOHEADER);
+	doc = mkd_string(art->body, art->size, flags);
 	if ( fmt.base ) 
 	    mkd_basename(doc, fmt.base);
-	markdown(doc, f, MKD_CDATA|FMT_FLAGS);
+	mkd_clr_flag_num(flags, MKD_NOLINKS);
+	mkd_clr_flag_num(flags, MKD_NOIMAGE);
+	markdown(doc, f, flags);
 	break;
     default:
 	fprintf(f, "    <![CDATA[");
@@ -261,6 +285,8 @@ atompost(FILE *f, struct article *art)
 	       "        <uri>%s</uri>\n"
 	       "    </author>\n", tod, mod, art->author, fmt.url);
     fprintf(f, "  </entry>\n");
+
+    mkd_free_flags(flags);
 }
 
 

@@ -574,6 +574,14 @@ writemsg(struct article *art)
 static void
 alink(FILE *f, char *pfx, char *sfx, char *line, char *end)
 {
+    mkd_flag_t *flags = mkd_flags();
+
+    mkd_set_flag_num(flags, MKD_NOLINKS);
+    mkd_set_flag_num(flags, MKD_NOIMAGE);
+    mkd_set_flag_num(flags, MKD_DLEXTRA);
+    mkd_set_flag_num(flags, MKD_FENCEDCODE);
+
+    
     fprintf(f, "%s<a href=\"%s/",pfx, fmt.url);
     while (*line != ':' && line < end)
 	putc(*line++, f);
@@ -581,9 +589,11 @@ alink(FILE *f, char *pfx, char *sfx, char *line, char *end)
     putc('>', f);
     if (*line == ':') {
 	++line;
-	mkd_text(line,end-line, f, MKD_NOLINKS|MKD_NOIMAGE|FMT_FLAGS);
+	mkd_text(line,end-line, f, flags);
     }
     fprintf(f, "</a>%s\n",sfx);
+
+    mkd_free_flags(flags);
 }
 
 
@@ -680,6 +690,11 @@ puthtml(FILE *f)
     int cmax, i;
     struct dirent **say;
     MMIOT *doc;
+    mkd_flag_t *flags = mkd_flags();
+
+    mkd_set_flag_num(flags, MKD_NOHEADER);
+    mkd_set_flag_num(flags, MKD_DLEXTRA);
+    mkd_set_flag_num(flags, MKD_FENCEDCODE);
 
     navbar(f, htmlart->url);
     subject(f, htmlart, 0);
@@ -689,10 +704,10 @@ puthtml(FILE *f)
 	fprintf(f, "<!-- message -->\n");
 	switch (htmlart->format) {
 	case MARKDOWN:
-	    doc = mkd_string(text,size, MKD_NOHEADER|FMT_FLAGS);
+	    doc = mkd_string(text,size, flags);
 	    if ( fmt.base )
 		mkd_basename(doc, fmt.base);
-	    markdown(mkd_string(text, size, MKD_NOHEADER|FMT_FLAGS), f, 0);
+	    markdown(mkd_string(text, size, flags), f, 0);
 	    break;
 	default:
 	    for (count=size, p = text; count>0; --count, ++p)
@@ -721,6 +736,18 @@ puthtml(FILE *f)
 	    sprintf(cf, "%s/%s", htmlart->cmtdir, say[i]->d_name);
 	    if ( c = opencomment(cf) ) {
 		if (c->approved) {
+
+		    mkd_flag_t *copy = mkd_copy_flags(flags);
+
+		    if ( c->linksok ) {
+			mkd_clr_flag_num(copy, MKD_NOLINKS);
+			mkd_clr_flag_num(copy, MKD_NOIMAGE);
+		    }
+		    else {
+			mkd_set_flag_num(copy, MKD_NOLINKS);
+			mkd_set_flag_num(copy, MKD_NOIMAGE);
+		    }
+		    
 		    fprintf(f, "<a name=\"%d\">\n</a><div class=\"comment\">\n", i);
 
 		    if (firstcomment)
@@ -728,7 +755,7 @@ puthtml(FILE *f)
 		    else
 			fputs(fmt.commentsep, f);
 
-		    markdown(mkd_string(c->text, strlen(c->text), MKD_NOHEADER|FMT_FLAGS), f, FMT_FLAGS | (c->linksok ? 0 : MKD_NOLINKS|MKD_NOIMAGE) );
+		    markdown(mkd_string(c->text, strlen(c->text), flags), f, copy);
 		    fprintf(f, "</div>\n");
 		    fprintf(f, "<div class=\"commentsig\">\n");
 
@@ -747,6 +774,7 @@ puthtml(FILE *f)
 			fprintf(f, "%s ", c->author);
 		    fputs(ctime( &(c->when) ), f);
 		    fprintf(f, "</div>\n");
+		    mkd_free_flags(copy);
 		}
 		freecomment(c);
 	    }
@@ -767,6 +795,8 @@ puthtml(FILE *f)
     }
     else if (htmlart->comments > 0)
 	fprintf(f, "<p class=\"CommentHeader\">Comments are closed</p>\n");
+
+    mkd_free_flags(flags);
 
     return 1;
 }
@@ -834,7 +864,10 @@ reindex(struct tm *tm, char *bbspath, int flags, int nrposts)
     char *webroot = fetch("_ROOT");
     char *q;
     MMIOT *doc;
+    mkd_flag_t *markdown_flags = mkd_flags();
 
+    mkd_set_flag_num(markdown_flags, MKD_DLEXTRA);
+    mkd_set_flag_num(markdown_flags, MKD_FENCEDCODE);
 
     m = *tm;
 
@@ -928,7 +961,8 @@ reindex(struct tm *tm, char *bbspath, int flags, int nrposts)
 
 		switch (art->format) {
 		case MARKDOWN:
-		    doc = mkd_string(art->body, art->size, MKD_NOHEADER|FMT_FLAGS);
+		    mkd_set_flag_num(markdown_flags, MKD_NOHEADER);
+		    doc = mkd_string(art->body, art->size, markdown_flags);
 		    if ( fmt.base )
 			mkd_basename(doc, fmt.base);
 		    markdown(doc, iFb, 0);
@@ -988,6 +1022,9 @@ done:
     /*fflush(iFb);*/
     rewind(iFb);
     free(files);
+
+
+    mkd_free_flags(markdown_flags);
 
     return 1;
 }
